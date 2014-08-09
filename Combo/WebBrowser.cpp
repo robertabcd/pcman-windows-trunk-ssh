@@ -20,8 +20,6 @@ static char THIS_FILE[] = __FILE__;
 #include "../Lite/mainfrm.h"
 #include "WebConn.h"
 
-static const IID IID_ITravelLogStg	= { 0x7EBFDD80, 0xAD18, 0x11d3, {0xA4, 0xC5, 0x00, 0xC0, 0x4F, 0x72, 0xD6, 0xB8}};
-
 /////////////////////////////////////////////////////////////////////////////
 // CWebBrowser
 
