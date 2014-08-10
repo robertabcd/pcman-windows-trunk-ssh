@@ -1995,7 +1995,7 @@ LRESULT CTermView::OnSocket(WPARAM wparam, LPARAM lparam)
 	for (; pptelnet < plasttelnet; pptelnet++)
 	{
 		CTelnetConn* ptelnet = *pptelnet;
-		if (ptelnet->is_telnet && ptelnet->telnet == (SOCKET)wparam)
+		if (ptelnet->is_telnet && ptelnet->socket == (SOCKET)wparam)
 		{
 			WORD err = HIWORD(lparam);
 

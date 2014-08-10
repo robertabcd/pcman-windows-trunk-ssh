@@ -108,14 +108,14 @@ CTelnetConn::CTelnetConn()
 	site_settings.paste_autowrap = 0;
 
 	key_map = NULL;
+
+	netconn = NULL;
 }
 
 CTelnetConn::~CTelnetConn()
 {
 	if (is_connected)
 		Shutdown();
-	if (telnet)
-		Close();
 
 	for (int i = 0; i < CTermView::all_telnet_conns.GetSize(); i++)
 	{
@@ -139,6 +139,8 @@ CTelnetConn::~CTelnetConn()
 	if (site_settings.text_input_conv || site_settings.text_output_conv)
 		view->chi_conv.Release();
 
+	delete netconn;
+	netconn = NULL;
 }
 
 
@@ -836,6 +838,8 @@ int find_sub_str(char* str, char* sub)
 
 void CTelnetConn::OnConnect(int nErrorCode)
 {
+	if (netconn)
+		netconn->OnConnect(nErrorCode);
 	TCITEM item;
 	item.mask = TCIF_IMAGE;
 	if (nErrorCode)
@@ -893,8 +897,9 @@ int CTelnetConn::Send(const void *lpBuf, int nBufLen)
 
 	if (!is_ansi_editor)
 	{
-		int r = ::send(telnet, (char*)lpBuf, nBufLen, 0);
-		return r;
+		if (netconn)
+			return netconn->Send(lpBuf, nBufLen);
+		return -1;
 	}
 
 	buf = (LPBYTE)lpBuf;
@@ -1004,6 +1009,8 @@ void CTelnetConn::CreateBuffer()
 inline void CTelnetConn::ReceiveData()
 {
 	int len = Recv(buffer, 4096);
+	if (len < 0)
+		return;
 
 	last_byte = buffer + len;
 	for (buf = buffer; buf < last_byte ; buf++)
@@ -1180,14 +1187,14 @@ int CTelnetConn::SendString(LPCTSTR str)
 
 BOOL CTelnetConn::Create()
 {
-	telnet = socket(AF_INET, SOCK_STREAM, 0);
+	socket = ::socket(AF_INET, SOCK_STREAM, 0);
 	sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	if (bind(telnet, (sockaddr*)&addr, sizeof(addr)))
+	if (bind(socket, (sockaddr*)&addr, sizeof(addr)))
 		return FALSE;
 
-	WSAAsyncSelect(telnet, view->m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE | FD_CONNECT);
+	WSAAsyncSelect(socket, view->m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE | FD_CONNECT);
 	return TRUE;
 }
 

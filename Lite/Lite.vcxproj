@@ -338,6 +338,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     </ClCompile>
     <ClCompile Include="MouseCTL.cpp" />
     <ClCompile Include="MouseGesture.cpp" />
+    <ClCompile Include="NetConn.cpp" />
     <ClCompile Include="OleImage.cpp" />
     <ClCompile Include="OtherPage.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
@@ -510,6 +511,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <ClInclude Include="MemIniFile.h" />
     <ClInclude Include="MouseCTL.h" />
     <ClInclude Include="MouseGesture.h" />
+    <ClInclude Include="NetConn.h" />
     <ClInclude Include="OleImage.h" />
     <ClInclude Include="OtherPage.h" />
     <ClInclude Include="PasswdDlg.h" />

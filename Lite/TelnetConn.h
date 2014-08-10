@@ -7,6 +7,8 @@
 // TelnetConn.h : header file
 //
 
+#include <cassert>
+
 #include <winsock2.h>
 // #include <WS2TCPIP.h> // for future IPV6 support
 
@@ -14,6 +16,7 @@
 #include "SiteSettings.h"
 #include "KeyMap.h"	// Added by ClassView
 #include "TriggerList.h"	// Added by ClassView
+#include "NetConn.h"
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -42,7 +45,8 @@ public:
 	CKeyMap* key_map;	//Áä½L¹ï¬M
 
 //	Socket handle
-	SOCKET telnet;
+	SOCKET socket;
+	INetConn *netconn;
 
 //	Screen Data
 	LPSTR *screen;	//screen buffer
@@ -199,19 +203,25 @@ protected:
 
 int CTelnetConn::Close()
 {
-	int r =::closesocket(telnet);
-	telnet = 0;
+	delete netconn;
+	netconn = NULL;
+	int r =::closesocket(socket);
+	socket = 0;
 	return r;
 }
 
 void CTelnetConn::Connect(sockaddr *addr, int len)
 {
-	::connect(telnet, addr, len);
+	::connect(socket, addr, len);
+	assert(netconn == NULL);
+	netconn = new CTcpConn(socket);
 }
 
 int CTelnetConn::Recv(void *buf, int len)
 {
-	return ::recv(telnet, (char*)buf, len, 0);
+	if (netconn)
+		return netconn->Receive(buf, len);
+	return -1;
 }
 
 
@@ -221,7 +231,9 @@ int CTelnetConn::Recv(void *buf, int len)
 
 int CTelnetConn::Shutdown()
 {
-	return ::shutdown(telnet, SD_SEND);
+	if (netconn)
+		return netconn->Shutdown();
+	return -1;
 }
 
 inline void CTelnetConn::SetBgColor(BYTE &attr, BYTE bk)
