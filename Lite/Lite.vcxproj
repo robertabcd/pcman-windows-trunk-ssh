@@ -46,7 +46,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)$(ProjectName)\$(Configuration)\PCMan\</OutDir>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -65,7 +65,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\SimpXmlParser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\SimpXmlParser;..\ThridParty\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;BUILD_UI;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -86,7 +86,7 @@
     </ResourceCompile>
     <PreLinkEvent />
     <Link>
-      <AdditionalDependencies>wsock32.lib;winmm.lib;Version.lib</AdditionalDependencies>
+      <AdditionalDependencies>wsock32.lib;winmm.lib;Version.lib;libeay32.lib;zlib.lib</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\Debug/PCMan.pdb</ProgramDatabaseFile>
@@ -94,11 +94,12 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
-      <OutputFile>$(OutDir)PCMan\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\ThirdParty\openssl\lib;..\ThirdParty\zlib\static32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreLinkEvent>
-      <Command>md $(OutDir)PCMan\Config
-$(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
+      <Command>md $(OutDir)Config
+$(OutDir)..\BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -113,7 +114,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\SimpXmlParser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\SimpXmlParser;..\ThridParty\openssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -136,7 +137,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
 $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>wsock32.lib;winmm.lib;Version.lib</AdditionalDependencies>
+      <AdditionalDependencies>wsock32.lib;winmm.lib;Version.lib;libeay32.lib;zlib.lib</AdditionalDependencies>
       <OutputFile>Release/PCMan/PCMan.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>.\Release/PCMan.pdb</ProgramDatabaseFile>
@@ -144,6 +145,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>..\ThirdParty\openssl\lib;..\ThirdParty\zlib\static32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -552,6 +554,9 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <None Include="res\hand.cur" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ThirdParty\libssh2\win32\libssh2.vcxproj">
+      <Project>{73b43b41-0663-4e84-8ca9-065bc028cfcf}</Project>
+    </ProjectReference>
     <ProjectReference Include="BuildMenuLite.vcxproj">
       <Project>{0c6d5061-75a3-4206-b47d-479b41c62d16}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

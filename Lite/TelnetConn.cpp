@@ -1008,10 +1008,17 @@ void CTelnetConn::CreateBuffer()
 
 inline void CTelnetConn::ReceiveData()
 {
-	int len = Recv(buffer, 4096);
-	if (len < 0)
-		return;
+	int len;
+	do {
+		len = Recv(buffer, sizeof(buffer));
+		if (len < 0)
+			return;
+		ProcessBuffer(len);
+	} while (len == sizeof(buffer));
+}
 
+void CTelnetConn::ProcessBuffer(int len)
+{
 	last_byte = buffer + len;
 	for (buf = buffer; buf < last_byte ; buf++)
 	{
@@ -1192,6 +1199,10 @@ BOOL CTelnetConn::Create()
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	if (bind(socket, (sockaddr*)&addr, sizeof(addr)))
+		return FALSE;
+
+	u_long yes = 1;
+	if (ioctlsocket(socket, FIONBIO, &yes))
 		return FALSE;
 
 	WSAAsyncSelect(socket, view->m_hWnd, WM_SOCKET, FD_READ | FD_CLOSE | FD_CONNECT);

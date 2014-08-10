@@ -162,6 +162,7 @@ public:
 	int SendString(LPCTSTR str);
 	void LocalEcho(void* str, int len);
 	void ReceiveData();
+	void ProcessBuffer(int len);
 	void CreateBuffer();
 	void CheckStrTrigger();
 	int Send(const void* lpBuf, int nBufLen);
@@ -214,7 +215,8 @@ void CTelnetConn::Connect(sockaddr *addr, int len)
 {
 	::connect(socket, addr, len);
 	assert(netconn == NULL);
-	netconn = new CTcpConn(socket);
+	//netconn = new CTcpConn(socket);
+	netconn = new CSshConn(socket);
 }
 
 int CTelnetConn::Recv(void *buf, int len)
