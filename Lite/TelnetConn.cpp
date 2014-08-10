@@ -147,6 +147,37 @@ CTelnetConn::~CTelnetConn()
 /////////////////////////////////////////////////////////////////////////////
 // CTelnetConn member functions
 
+int CTelnetConn::Shutdown()
+{
+	if (netconn)
+		return netconn->Shutdown();
+	return INetConn::ErrUnknown;
+}
+
+int CTelnetConn::Close()
+{
+	delete netconn;
+	netconn = NULL;
+	int r =::closesocket(socket);
+	socket = 0;
+	return r;
+}
+
+void CTelnetConn::Connect(sockaddr *addr, int len)
+{
+	::connect(socket, addr, len);
+	assert(netconn == NULL);
+	//netconn = new CTcpConn(socket);
+	netconn = new CSshConn(socket);
+}
+
+int CTelnetConn::Recv(void *buf, int len)
+{
+	if (netconn)
+		return netconn->Receive(buf, len);
+	return INetConn::ErrUnknown;
+}
+
 void CTelnetConn::OnReceive(int nErrorCode)
 {
 	if (view->telnet != this)
@@ -899,7 +930,7 @@ int CTelnetConn::Send(const void *lpBuf, int nBufLen)
 	{
 		if (netconn)
 			return netconn->Send(lpBuf, nBufLen);
-		return -1;
+		return INetConn::ErrUnknown;
 	}
 
 	buf = (LPBYTE)lpBuf;

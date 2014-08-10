@@ -154,10 +154,10 @@ public:
 	inline void ResetMode(int p);
 	inline void DeviceStatusReport(int p);
 
-	inline int Close();
-	inline int Shutdown();
-	inline int Recv(void* buf, int len);
-	inline void Connect(sockaddr* addr, int len);
+	int Close();
+	int Shutdown();
+	int Recv(void* buf, int len);
+	void Connect(sockaddr* addr, int len);
 	BOOL Create();
 	int SendString(LPCTSTR str);
 	void LocalEcho(void* str, int len);
@@ -201,42 +201,6 @@ public:
 protected:
 };
 
-
-int CTelnetConn::Close()
-{
-	delete netconn;
-	netconn = NULL;
-	int r =::closesocket(socket);
-	socket = 0;
-	return r;
-}
-
-void CTelnetConn::Connect(sockaddr *addr, int len)
-{
-	::connect(socket, addr, len);
-	assert(netconn == NULL);
-	//netconn = new CTcpConn(socket);
-	netconn = new CSshConn(socket);
-}
-
-int CTelnetConn::Recv(void *buf, int len)
-{
-	if (netconn)
-		return netconn->Receive(buf, len);
-	return -1;
-}
-
-
-#ifndef SD_SEND
-#define	SD_SEND	1
-#endif
-
-int CTelnetConn::Shutdown()
-{
-	if (netconn)
-		return netconn->Shutdown();
-	return -1;
-}
 
 inline void CTelnetConn::SetBgColor(BYTE &attr, BYTE bk)
 {
