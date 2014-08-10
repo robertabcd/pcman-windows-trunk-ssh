@@ -1,0 +1,3 @@
+libssh2/win32/Debug*/
+libssh2/win32/Release*/
+libssh2/win32/*.exe
