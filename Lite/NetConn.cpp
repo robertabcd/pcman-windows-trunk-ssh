@@ -98,6 +98,8 @@ CSshConn::~CSshConn()
 
 void CSshConn::OnConnect(int nErrorCode)
 {
+	if (nErrorCode != 0)
+		return;
 	assert(m_state == StateConnecting);
 	m_state = StateHandshaking;
 	Receive(NULL, 0);
@@ -128,6 +130,10 @@ int CSshConn::Receive(void *buf, int len)
 {
 	fprintf(stderr, "Receive(): m_state: %d\n", m_state);
 
+	// Check session
+	if (m_session == NULL)
+		return ErrUnknown;
+
 	if (m_state == StateHandshaking) {
 		if (libssh2_session_handshake(m_session, m_socket) < 0)
 			return AgainOrError();
@@ -151,6 +157,10 @@ int CSshConn::Receive(void *buf, int len)
 			return AgainOrError();
 		m_state = StateRequestingPty;
 	}
+
+	// Check channel
+	if (m_channel == NULL)
+		return ErrUnknown;
 
 	if (m_state == StateRequestingPty) {
 		int ret = libssh2_channel_request_pty(m_channel, "vt100");
