@@ -177,6 +177,7 @@ public:
 	void UpdateCursorPos();
 	void OnText();
 	void OnIAC();
+	CString GetStatus() const;
 
 	void ClearAllFlags()
 	{

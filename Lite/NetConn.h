@@ -50,6 +50,7 @@ public:
 	virtual int Receive(void *buf, int len);
 	virtual int Shutdown();
 	void SetSshUsername(const char *username);
+	std::string GetMethods() const;
 private:
 	SOCKET m_socket;
 	LIBSSH2_SESSION *m_session;
@@ -68,9 +69,12 @@ private:
 
 	ConnState m_state;
 	std::string m_ssh_username;
+
+	std::string m_methods;
 	
 	int AgainOrError();
 	int AgainOrError(int code);
+	void GenMethods();
 };
 
 #endif

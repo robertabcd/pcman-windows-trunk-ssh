@@ -173,6 +173,7 @@ int CSshConn::Receive(void *buf, int len)
 		int ret = libssh2_channel_shell(m_channel);
 		if (ret < 0)
 			return AgainOrError(ret);
+		GenMethods();
 		m_state = StateEstablished;
 	}
 
@@ -230,4 +231,25 @@ int CSshConn::Shutdown()
 void CSshConn::SetSshUsername(const char *username)
 {
 	m_ssh_username = username;
+}
+
+void CSshConn::GenMethods()
+{
+	m_methods =
+		std::string("kex(")
+		+ libssh2_session_methods(m_session, LIBSSH2_METHOD_KEX)
+		+ ") cs("
+		+ libssh2_session_methods(m_session, LIBSSH2_METHOD_CRYPT_CS)
+		+ ","
+		+ libssh2_session_methods(m_session, LIBSSH2_METHOD_MAC_CS)
+		+ ") sc("
+		+ libssh2_session_methods(m_session, LIBSSH2_METHOD_CRYPT_SC)
+		+ ","
+		+ libssh2_session_methods(m_session, LIBSSH2_METHOD_MAC_SC)
+		+ ")";
+}
+
+std::string CSshConn::GetMethods() const
+{
+	return m_methods;
 }

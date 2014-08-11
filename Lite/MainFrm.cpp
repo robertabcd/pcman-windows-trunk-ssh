@@ -672,6 +672,7 @@ void CMainFrame::UpdateStatus()
 			min = min % 60;
 //			text.Format("\t連線時間：%d 小時 %d 分 %d 秒\t\t位址：%s",hr,min,sec,(LPCTSTR)telnet->address);
 			text.Format(con_status, hr, min, sec, (LPCTSTR)telnet->address);
+			text += "\t\t" + telnet->GetStatus();
 
 			char *szMouseGesture;
 

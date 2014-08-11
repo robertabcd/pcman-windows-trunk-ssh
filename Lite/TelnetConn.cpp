@@ -2250,3 +2250,10 @@ void CTelnetConn::CopyArticleComplete(bool cancel)
 	get_article_with_ansi = false;
 	downloaded_article.Empty();
 }
+
+CString CTelnetConn::GetStatus() const
+{
+	if (netconn && type == TypeSsh)
+		return static_cast<CSshConn *>(netconn)->GetMethods().c_str();
+	return CString();
+}
