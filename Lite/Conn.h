@@ -37,11 +37,20 @@ BYTE is_disconnected : 1;
 BYTE is_lookup_host : 1;
 BYTE is_cancelled : 1;
 
+	enum Type {
+		TypeTelnet,
+		TypeSsh,
+	};
+
 	CString name;	//顯示在tab的名稱
 	CString address;
+	Type type;
+	CString ssh_username;
 
 	CConn();
 	virtual ~CConn() = 0;
+
+	static CConn *CreateFromAddress(CString address, LPCTSTR cfg_path = NULL);
 };
 
 #endif // !defined(AFX_TCON_H__370AE7A1_4928_11D7_992C_0040F427D59A__INCLUDED_)

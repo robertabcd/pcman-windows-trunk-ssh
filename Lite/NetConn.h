@@ -2,6 +2,7 @@
 #ifndef NETCONN_H
 #	define NETCONN_H
 
+#include <string>
 #include <winsock2.h>
 #include "../ThirdParty/libssh2/include/libssh2.h"
 
@@ -48,6 +49,7 @@ public:
 	virtual int Send(const void *data, int len);
 	virtual int Receive(void *buf, int len);
 	virtual int Shutdown();
+	void SetSshUsername(const char *username);
 private:
 	SOCKET m_socket;
 	LIBSSH2_SESSION *m_session;
@@ -65,6 +67,7 @@ private:
 	};
 
 	ConnState m_state;
+	std::string m_ssh_username;
 	
 	int AgainOrError();
 	int AgainOrError(int code);

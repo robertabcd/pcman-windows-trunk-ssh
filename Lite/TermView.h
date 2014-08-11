@@ -170,7 +170,6 @@ public:
 	BOOL OpenAnsFile(LPCTSTR filepath);
 	UINT mouse_sel_timer;
 	static DWORD DNSLookupThread(LPVOID param);
-	inline CConn* NewConn(CString address, CString name, unsigned short port, LPCTSTR cfg_path);
 	void OnInitialUpdate();
 	inline void FillBk(CDC& dc);
 	void UpdateBkgnd();
@@ -182,7 +181,9 @@ public:
 	void OnAnsiCopy();
 	void ReConnect(CTelnetConn* retelnet);
 	LRESULT CTermView::OnDNSLookupEnd(WPARAM found, LPARAM lparam);
-	BOOL Connect(CString address, CString name, unsigned short port, LPCTSTR cfg = NULL);
+	BOOL Connect(CString address, CString name, LPCTSTR cfg = NULL);
+	// Deprecated, for backward compatibility.
+	BOOL Connect(CString address, CString name, unsigned int port, LPCTSTR cfg = NULL);
 	//{{AFX_MSG(CTermView)
 	afx_msg LRESULT OnFind(WPARAM w, LPARAM l);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -241,6 +242,8 @@ protected:
 
 	inline void DrawLineBlinkOld(CDC &dc, LPSTR line, int y);
 	inline void DrawLineOld(CDC &dc, LPSTR line, BYTE* pline_selstart, BYTE* pline_selend, int y);
+private:
+	void AddConn(CConn *conn);
 };
 
 

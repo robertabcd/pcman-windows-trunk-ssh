@@ -1328,7 +1328,7 @@ LRESULT CTermView::_OnImeCompositionA(WPARAM wparam, LPARAM lparam)
 	return 0;
 }
 
-BOOL CTermView::Connect(CString address, CString name, unsigned short port, LPCTSTR cfg_path)
+BOOL CTermView::Connect(CString address, CString name, LPCTSTR cfg_path)
 {
 	if (name.IsEmpty())
 		return FALSE;
@@ -1337,17 +1337,46 @@ BOOL CTermView::Connect(CString address, CString name, unsigned short port, LPCT
 		address = "telnet://" + address;
 #endif
 
-	CConn* ncon = NewConn(address, name, port, cfg_path);	//產生了新的連線畫面，完成所有設定
-	if (!ncon)
-		return FALSE;
+	CConn* newcon = CConn::CreateFromAddress(address, cfg_path);
+	newcon->name = name;
 
-	parent->SwitchToConn(ncon);
-	if ((ncon->is_ansi_editor))
+#if defined	_COMBO_
+	if (!newcon->is_web)	//如果是連線BBS,新開BBS畫面
+	{
+#endif
+		CTelnetConn *new_telnet = static_cast<CTelnetConn *>(newcon);
+
+		// Robert: what's this?
+		if (new_telnet->site_settings.text_input_conv || new_telnet->site_settings.text_output_conv)
+			chi_conv.AddRef();
+
+		new_telnet->CreateBuffer();
+
+#if defined	_COMBO_
+	}
+#endif
+
+	AddConn(newcon);
+	if ((newcon->is_ansi_editor))
 		return TRUE;
 
 //開始連接socket
-	ConnectSocket((CTelnetConn*)ncon);
+	ConnectSocket((CTelnetConn*)newcon);
 	return TRUE;
+}
+
+BOOL CTermView::Connect(CString address, CString name, unsigned int port, LPCTSTR cfg)
+{
+	CString strport;
+	strport.Format(_T(":%d"), port);
+	return Connect(address + strport, name, cfg);
+}
+
+void CTermView::AddConn(CConn *conn)
+{
+	parent->NewTab(conn);
+	all_telnet_conns.Add(conn);
+	parent->SwitchToConn(conn);
 }
 
 LRESULT CTermView::OnDNSLookupEnd(WPARAM found, LPARAM lparam)
@@ -1431,7 +1460,7 @@ void CTermView::ReConnect(CTelnetConn *retelnet)
 	}
 	else
 	{
-		Connect(retelnet->address, retelnet->name, retelnet->port, retelnet->cfg_path);
+		Connect(retelnet->address, retelnet->name, retelnet->cfg_path);
 	}
 }
 
@@ -1477,7 +1506,7 @@ void CTermView::OnAnsiCopy()
 
 void CTermView::OnAnsiEditor()
 {
-	Connect(LoadString(IDS_NOT_SAVED), LoadString(IDS_ANSI_EDIT), 0);
+	AddConn(CTelnetConn::CreateAnsiEditor());
 }
 
 
@@ -1919,52 +1948,6 @@ void CTermView::OnBackspaceNoDBCS()
 	}
 }
 
-CConn* CTermView::NewConn(CString address, CString name, unsigned short port, LPCTSTR cfg_path)
-{
-	CConn* newcon = NULL;
-	newcon = new CTelnetConn;
-	newcon->address = address;
-	newcon->name = name;
-
-#if defined	_COMBO_
-	if (!newcon->is_web)	//如果是連線BBS,新開BBS畫面
-	{
-#endif
-		CTelnetConn* new_telnet = (CTelnetConn*)newcon;
-		new_telnet->port = port;
-		new_telnet->cfg_path = cfg_path;
-
-		//為新的socket載入設定值
-		if (!new_telnet->site_settings.Load(new_telnet->cfg_path))	//如果載入設定發生錯誤
-		{
-			//這很有可能會在密碼輸入錯誤的時候發生!
-			delete new_telnet;
-			return NULL;
-		}
-		new_telnet->key_map = CKeyMap::Load(new_telnet->site_settings.key_map_name);
-
-		if (new_telnet->site_settings.text_input_conv || new_telnet->site_settings.text_output_conv)
-			chi_conv.AddRef();
-
-		if (0 == port)  // port = 0 代表 ansi editor ( dirty hack :( )
-		{
-			new_telnet->ClearAllFlags();
-			new_telnet->is_ansi_editor = true;
-			new_telnet->site_settings.line_count = AppConfig.ed_lines_per_page * 2;
-			new_telnet->site_settings.cols_per_page = AppConfig.ed_cols_per_page;
-			new_telnet->site_settings.lines_per_page = AppConfig.ed_lines_per_page;
-			new_telnet->site_settings.showscroll = TRUE;
-		}
-		new_telnet->CreateBuffer();
-
-#if defined	_COMBO_
-	}
-#endif
-	parent->NewTab(newcon);
-	all_telnet_conns.Add(newcon);
-	return newcon;
-}
-
 DWORD CTermView::DNSLookupThread(LPVOID param)
 {
 	DNSLookupData* host = (DNSLookupData*)param;
@@ -2025,11 +2008,7 @@ void CTermView::ConnectSocket(CTelnetConn *new_telnet)
 
 	new_telnet->Create();
 
-#if defined	_COMBO_
-	const LPCTSTR paddress = LPCTSTR(new_telnet->address) + 9;
-#else
-	CString &paddress = new_telnet->address;
-#endif
+	CString &paddress = new_telnet->host;
 	SOCKADDR_IN sockaddr;
 	memset(&sockaddr, 0, sizeof(SOCKADDR_IN));
 	sockaddr.sin_family = AF_INET;
@@ -2947,7 +2926,7 @@ void CTermView::AdjustFont(int cx, int cy)
 void CTermView::ConnectStr(CString name, CString dir)
 {
 	CString address;
-	unsigned short port;
+
 	int i = name.Find('\t');
 	address = name.Mid(i + 1);
 	char type = name[0];
@@ -2959,24 +2938,7 @@ void CTermView::ConnectStr(CString name, CString dir)
 		ConnectWeb(address, TRUE);
 		return;
 	}
-	if (0 == strncmp("telnet:", address, 7))
-	{
-		LPCTSTR p = address;
-		p += 7;
-		while (*p && *p == '/')
-			++p;
-		address = p;
-	}
 #endif
-
-	i = address.ReverseFind(':');
-	if (i == -1)
-		port = 23;
-	else
-	{
-		port = (unsigned short)atoi(LPCTSTR(address.Mid(i + 1)));
-		address = address.Left(i);
-	}
 	SetFocus();
 
 	CString conf;
@@ -2987,7 +2949,7 @@ void CTermView::ConnectStr(CString name, CString dir)
 		conf = dir;
 		conf += name;
 	}
-	Connect(address, name, port, conf);
+	Connect(address, name, conf);
 }
 
 

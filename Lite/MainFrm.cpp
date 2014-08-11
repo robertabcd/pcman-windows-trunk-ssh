@@ -837,17 +837,11 @@ void CMainFrame::OnNewConnectionAds(LPCTSTR cmdline)
 
 	AddToTypedHistory(cmdline);
 
-	if (0 == strnicmp(cmdline, "telnet:", 7))
+	if (0 == strnicmp(cmdline, "telnet://", 9)
+		|| 0 == strnicmp(cmdline, "bbs://", 6)
+		|| 0 == strnicmp(cmdline, "ssh://", 6))
 	{
-		cmdline += 7;
-		while (*cmdline == '/')
-			cmdline++;
-	}
-	else if (0 == strnicmp(cmdline, "bbs:", 4))
-	{
-		cmdline += 4;
-		while (*cmdline == '/')
-			cmdline++;
+		// okay, fallthrough
 	}
 	else if (IsFileExist(cmdline))
 	{
@@ -876,28 +870,7 @@ void CMainFrame::OnNewConnectionAds(LPCTSTR cmdline)
 	}
 #endif
 
-	CString param = cmdline;
-	if (param[param.GetLength()-1] == '/')
-		param = param.Left(param.GetLength() - 1);
-
-	int pos = param.Find(':');
-
-	CString address;
-	unsigned short port;
-	if (pos == -1)
-	{
-		address = param;
-		port = 23;
-	}
-	else
-	{
-		address = param.Left(pos);
-		CString port_str = param.Mid(pos + 1);
-		port = (unsigned short)atoi(port_str);
-		if (port == 23)
-			param = address;
-	}
-	view.Connect(address, param, port);
+	view.Connect(cmdline, cmdline);
 	if(!setCharset)
 	{
 		switch(AppConfig.saved_charset)
@@ -985,17 +958,7 @@ void CMainFrame::UpdateAddressBar()
 	if (view.con)
 	{
 		SetWindowText(view.con->name + window_title);
-		CString address = view.con->address;
-		if (view.telnet && !view.telnet->is_ansi_editor)
-		{
-			if (view.telnet->port != 23)
-			{
-				char port_str[16];
-				sprintf(port_str, ":%d", view.telnet->port);
-				address += port_str;
-			}
-		}
-		address_bar.SetWindowText(address);
+		address_bar.SetWindowText(view.con->address);
 	}
 	else
 	{
@@ -1005,17 +968,7 @@ void CMainFrame::UpdateAddressBar()
 #else
 	if (view.telnet)
 	{
-		CString address = view.telnet->address;
-		if (!view.telnet->is_ansi_editor)
-		{
-			if (view.telnet->port != 23)
-			{
-				char port_str[16];
-				sprintf(port_str, ":%d", view.telnet->port);
-				address += port_str;
-			}
-		}
-		address_bar.SetWindowText(address);
+		address_bar.SetWindowText(view.telnet->address);
 	}
 	else
 		address_bar.SetWindowText("");

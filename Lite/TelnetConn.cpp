@@ -1,6 +1,7 @@
 // TelnetConn.cpp : implementation file
 //
 
+#include <stdexcept>
 #include "stdafx.h"
 #include "TelnetConn.h"
 
@@ -60,6 +61,31 @@ struct ANSI_TAB ansi_tab[]={
 	{0,0,-1,-1,0}	//null
 };
 */
+
+
+// static
+CTelnetConn *CTelnetConn::CreateAnsiEditor()
+{
+	CTelnetConn *tc = new CTelnetConn;
+
+	tc->address = LoadString(IDS_NOT_SAVED);
+	tc->name = LoadString(IDS_ANSI_EDIT);
+
+	// Robert: original code path will do this, don't know if it is safe to remove.
+	if (!tc->LoadConfig(NULL)) {
+		delete tc;
+		return NULL;
+	}
+
+	tc->ClearAllFlags();
+	tc->is_ansi_editor = true;
+	tc->site_settings.line_count = AppConfig.ed_lines_per_page * 2;
+	tc->site_settings.cols_per_page = AppConfig.ed_cols_per_page;
+	tc->site_settings.lines_per_page = AppConfig.ed_lines_per_page;
+	tc->site_settings.showscroll = TRUE;
+	tc->CreateBuffer();
+	return tc;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CTelnetConn
@@ -147,6 +173,18 @@ CTelnetConn::~CTelnetConn()
 /////////////////////////////////////////////////////////////////////////////
 // CTelnetConn member functions
 
+bool CTelnetConn::LoadConfig(LPCTSTR cfg_path)
+{
+	this->cfg_path = cfg_path;
+	if (!site_settings.Load(cfg_path))	//如果載入設定發生錯誤
+	{
+		//這很有可能會在密碼輸入錯誤的時候發生!
+		return false;
+	}
+	key_map = CKeyMap::Load(site_settings.key_map_name);
+	return true;
+}
+
 int CTelnetConn::Shutdown()
 {
 	if (netconn)
@@ -167,8 +205,23 @@ void CTelnetConn::Connect(sockaddr *addr, int len)
 {
 	::connect(socket, addr, len);
 	assert(netconn == NULL);
-	//netconn = new CTcpConn(socket);
-	netconn = new CSshConn(socket);
+
+	switch (type) {
+	case TypeTelnet:
+		netconn = new CTcpConn(socket);
+		break;
+
+	case TypeSsh:
+	{
+		CSshConn *c = new CSshConn(socket);
+		c->SetSshUsername(LPCTSTR(ssh_username));
+		netconn = c;
+		break;
+	}
+
+	default:
+		throw std::runtime_error("invalid type");
+	}
 }
 
 int CTelnetConn::Recv(void *buf, int len)
@@ -896,27 +949,13 @@ void CTelnetConn::OnConnect(int nErrorCode)
 		int idx = view->parent->ConnToIndex(this);
 		item.iImage = 0;
 		view->parent->tab.SetItem(idx, &item);
-		CString ads_port = address;
-		if (port != 23)
-		{
-			char port_str[16];
-			sprintf(port_str, ":%d", port);
-			ads_port += port_str;
-		}
 		CString str("s");
-		str += name;
-		str += '\t';
-#ifdef _COMBO_
-		str += LPCTSTR(ads_port) + 9;	// strlen("telnet://") = 9;
-#else
-		str += ads_port;
-#endif
-		str += '\t';
+		str += name + '\t' + address + '\t';
 		if (!cfg_path.IsEmpty())
 			str += cfg_path.Left(cfg_path.GetLength() - name.GetLength());
 
 		view->parent->AddToHistoryMenu(str);
-		view->parent->AddToHistory(ads_port);
+		view->parent->AddToHistory(address);
 	}
 }
 

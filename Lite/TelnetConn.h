@@ -40,6 +40,7 @@ public:
 		MIN_LINE_COUNT = 24
 	};
 
+	CString host;
 	unsigned short	port;
 	CString cfg_path;	//站台進階設定檔相對路徑
 	CKeyMap* key_map;	//鍵盤對映
@@ -98,6 +99,7 @@ public:
 
 // Operations
 public:
+	bool LoadConfig(LPCTSTR cfg_path);
 	void CopyArticleComplete(bool cancel = false);
 	void CopyArticle(bool with_color, bool in_editor);
 	CString GetLineWithAnsi(long line);
@@ -184,6 +186,8 @@ public:
 		scr_top = 0;
 		scr_bottom = site_settings.lines_per_page - 1;
 	}
+
+	static CTelnetConn *CreateAnsiEditor();
 
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CTelnetConn)

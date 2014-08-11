@@ -141,7 +141,7 @@ int CSshConn::Receive(void *buf, int len)
 	}
 
 	if (m_state == StateAuthenticating) {
-		char *methods = libssh2_userauth_list(m_session, "bbs", 3);
+		char *methods = libssh2_userauth_list(m_session, m_ssh_username.c_str(), m_ssh_username.size());
 		if (methods) {
 			fprintf(stderr, "AuthMethods: %s\n", methods);
 			return -1;
@@ -225,4 +225,9 @@ int CSshConn::Shutdown()
 		m_session = NULL;
 	}
 	return 0;
+}
+
+void CSshConn::SetSshUsername(const char *username)
+{
+	m_ssh_username = username;
 }
