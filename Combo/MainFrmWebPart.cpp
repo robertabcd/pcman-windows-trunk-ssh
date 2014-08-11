@@ -901,6 +901,8 @@ void CMainFrame::SwitchToConn(int index)
 }
 
 
+#if 0
+// XXX(Robert): this fails to compile.
 void CMainFrame::OnIESetup() //FIXME
 {
 	typedef BOOL (WINAPI *IEOPTION)(HWND);
@@ -912,3 +914,4 @@ void CMainFrame::OnIESetup() //FIXME
 		FreeLibrary(hmod);
 	}
 }
+#endif

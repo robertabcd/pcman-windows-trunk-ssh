@@ -1,10 +1,10 @@
 #include "../Lite/MainFrm.h"
 #include "../Lite/TermView.h"
 
+#ifdef	_COMBO_
 #include "WebConnIE.h"
 #include "WebConnCEF.h"
 
-#ifdef	_COMBO_
 #include "WebManagerIE.h"
 extern WebManager *g_webmanager;
 #endif

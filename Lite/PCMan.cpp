@@ -246,7 +246,12 @@ int CApp::ExitInstance()
 
 BOOL CApp::OnIdle( LONG lCount )
 {
+#ifdef _COMBO_
     return g_webmanager->OnMessageLoopIdle() ? TRUE : FALSE;
+#else
+	// XXX(Robert): not sure if this is okay.
+	return TRUE;
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////

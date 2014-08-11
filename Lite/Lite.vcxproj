@@ -149,6 +149,8 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Combo\MainFrmWebPart.cpp" />
+    <ClCompile Include="..\Combo\TermViewWebPart.cpp" />
     <ClCompile Include="AddressDlg.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
@@ -265,6 +267,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</BrowseInformation>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
+    <ClCompile Include="Debug_Kit.cpp" />
     <ClCompile Include="DragTreeCtrl.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
@@ -338,6 +341,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</BrowseInformation>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
     </ClCompile>
+    <ClCompile Include="Minidump.cpp" />
     <ClCompile Include="MouseCTL.cpp" />
     <ClCompile Include="MouseGesture.cpp" />
     <ClCompile Include="NetConn.cpp" />
@@ -497,6 +501,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <ClInclude Include="CustomTabCtrl.h" />
     <ClInclude Include="CustomToolBar.h" />
     <ClInclude Include="..\DlgLayout\DlgLayout.h" />
+    <ClInclude Include="Debug_Kit.h" />
     <ClInclude Include="DragTreeCtrl.h" />
     <ClInclude Include="FavMenu.h" />
     <ClInclude Include="FileUtil.h" />
@@ -511,6 +516,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <ClInclude Include="ListDlg.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MemIniFile.h" />
+    <ClInclude Include="Minidump.h" />
     <ClInclude Include="MouseCTL.h" />
     <ClInclude Include="MouseGesture.h" />
     <ClInclude Include="NetConn.h" />
@@ -535,6 +541,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <ClInclude Include="TermView.h" />
     <ClInclude Include="TriggerList.h" />
     <ClInclude Include="Ucs2Conv.h" />
+    <ClInclude Include="Version.h" />
     <ClInclude Include="WindowState.h" />
     <ClInclude Include="WinUtils.h" />
   </ItemGroup>
