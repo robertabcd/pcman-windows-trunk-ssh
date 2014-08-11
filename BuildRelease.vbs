@@ -23,6 +23,15 @@ if fs.FileExists(".\Release\PCManCB.7z") then
    fs.DeleteFile( ".\Release\PCManCB.7z" )
 end if
 
+
+if fs.FileExists(".\Release\PCMan.dbg.7z") then
+   fs.DeleteFile( ".\Release\PCMan.dbg.7z" )
+end if
+
+if fs.FileExists(".\Release\PCManCB.dbg.7z") then
+   fs.DeleteFile( ".\Release\PCManCB.dbg.7z" )
+end if
+
 'Try to include non-free icons from PCMan 2004
 dim use_nonfree_icon
 use_nonfree_icon = False
@@ -49,8 +58,8 @@ end if
 'Build installer with NSIS
 Set sh = WScript.CreateObject("WScript.Shell")
 'Find NSIS
-nsis=sh.RegRead("HKLM\Software\NSIS\")
-nsis="""" + nsis + "\makensis.exe"" "
+'nsis=sh.RegRead("HKLM\Software\NSIS\")
+nsis="""C:\Program Files (x86)\NSIS\makensis.exe"" "
 'Build installer of Lite with NSIS
 sh.Run (nsis+".\Installer.nsi"), 1, True
 'Build installer of Combo with NSIS
@@ -73,6 +82,11 @@ sh.Run (seven_zip + " a -tzip -mx=9 -mpass=15 .\Release\Migrate.zip "".\Migrate\
 sh.Run (seven_zip + " a -t7z -mx=5 -ms=on -xr!.svn .\Release\PCMan.7z .\Lite\Release\PCMan"), 1, True
 sh.Run (seven_zip + " a -t7z -mx=5 -ms=on -xr!.svn .\Release\PCManCB.7z "".\Combo\Release\PCMan Combo"""), 1, True
 sh.Run (seven_zip + " a -t7z -mx=5 -ms=on -xr!.svn .\Release\Migrate.7z "".\Migrate\Release\Migrate.exe"""), 1, True
+
+'Pack debug information
+sh.Run (seven_zip + " a -t7z -mx=5 -ms=on -xr!.svn .\Release\PCMan.dbg.7z .\Lite\Release\*.pdb .\Lite\Release\*.map"), 1, True
+sh.Run (seven_zip + " a -t7z -mx=5 -ms=on -xr!.svn .\Release\PCManCB.dbg.7z .\Combo\Release\*.pdb .\Combo\Release\*.map"), 1, True
+
 
 'Disable portable mode
 fs.MoveFile ".\Lite\Release\PCMan\Portable", ".\Lite\Release\PCMan\_Portable"
