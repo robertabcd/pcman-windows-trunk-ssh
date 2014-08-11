@@ -181,14 +181,20 @@ int CSshConn::Receive(void *buf, int len)
 			return 0;
 		char *p = (char *)buf;
 		int remain = len;
+		int n;
 		while (remain > 0) {
-			int n = libssh2_channel_read(m_channel, p, remain);
+			n = libssh2_channel_read(m_channel, p, remain);
 			if (n <= 0)
 				break;
 			p += n;
 			remain -= n;
 		}
-		return len - remain;
+		if (len - remain > 0)
+			return len - remain;
+		if (n == LIBSSH2_ERROR_EAGAIN)
+			return ErrWouldBlock;
+		Shutdown();
+		return ErrUnknown;
 	}
 
 	throw std::runtime_error("not reached");
