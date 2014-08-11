@@ -141,7 +141,7 @@ BEGIN
     LTEXT           "連線名稱：",IDC_STATIC,7,51,41,8
 END
 
-IDD_GENERAL DIALOG DISCARDABLE  0, 0, 271, 211
+IDD_GENERAL DIALOG DISCARDABLE  0, 0, 271, 257
 STYLE DS_MODALFRAME | WS_CHILD | WS_CAPTION | WS_SYSMENU
 CAPTION "一般"
 FONT 9, "新細明體"
@@ -149,51 +149,59 @@ BEGIN
     CONTROL         "允許同時執行多個 PCMan 程式",IDC_MULTI_PCMAN,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,7,123,10
     CONTROL         "結束程式若還有分頁開啟要詢問",IDC_CLOSEQUERY,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,23,128,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,22,128,10
     CONTROL         "關閉BBS連線畫面若還在連線中要詢問",IDC_BBS_CLOSEQUERY,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,39,151,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,37,151,10
     CONTROL         "連點兩下連線標籤關閉連線",IDC_DBLCLK_CLOSE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,55,112,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,67,112,10
     CONTROL         "快速鍵切換連線時，連線標籤循環顯示",IDC_SCROLLTAB,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,71,152,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,82,152,10
     CONTROL         "主視窗最小化時隱藏到系統列",IDC_MINIMIZE_TO_TRAY,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,87,120,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,97,120,10
     CONTROL         "關閉分頁後跳回上一個瀏覽的分頁",IDC_SWITCH_BACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,103,136,10
-    LTEXT           "使用中標籤文字色彩",IDC_STATIC,167,8,73,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,112,136,10
+    LTEXT           "使用中標籤文字色彩",IDC_STATIC,167,7,73,8
     CONTROL         "",IDC_ACTIVE_TAB_TEXTCOLOR,"Button",BS_OWNERDRAW | 
                     WS_TABSTOP,252,7,12,11
     CONTROL         "連線標籤顯示編號",IDC_TABADDNUMBER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,167,23,80,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,167,22,80,10
     CONTROL         "使用按鈕式連線標籤",IDC_TAB_BUTTON,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,167,39,88,10
-    LTEXT           "網址紀錄筆數",IDC_STATIC,167,56,49,8
-    EDITTEXT        IDC_MAX_HISTORY,221,55,43,14,ES_AUTOHSCROLL | ES_NUMBER
+                    BS_AUTOCHECKBOX | WS_TABSTOP,167,37,88,10
+    LTEXT           "網址紀錄筆數",IDC_STATIC,167,52,49,8
+    EDITTEXT        IDC_MAX_HISTORY,221,52,43,14,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "",IDC_MAX_HISTORYSPIN,"msctls_updown32",UDS_SETBUDDYINT | 
-                    UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,253,63,11,
+                    UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,253,52,11,
                     14
-    LTEXT           "使用熱鍵快速呼叫 PCMan 主視窗",IDC_STATIC,7,123,116,8
+    LTEXT           "使用熱鍵快速呼叫 PCMan 主視窗",IDC_STATIC,7,143,116,8
     CONTROL         "HotKey1",IDC_HOTKEY,"msctls_hotkey32",WS_BORDER | 
-                    WS_TABSTOP,130,121,88,14
-    GROUPBOX        "全螢幕時要顯示的工具列",IDC_STATIC,7,142,257,47
+                    WS_TABSTOP,130,141,88,14
+    GROUPBOX        "全螢幕時要顯示的工具列",IDC_STATIC,7,158,257,47
     CONTROL         "主要工具列",IDC_FULL_SHOWTB,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,157,56,10
+                    WS_TABSTOP,16,170,56,10
     CONTROL         "位址列",IDC_FULL_SHOWADS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,86,157,40,10
+                    WS_TABSTOP,86,170,40,10
     CONTROL         "狀態列",IDC_FULL_SHOWSB,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,141,157,40,10
+                    WS_TABSTOP,141,170,40,10
     CONTROL         "關閉連線按鈕",IDC_FULL_SHOWCLOSE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,195,157,64,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,195,170,64,10
     CONTROL         "連線標籤列",IDC_FULL_SHOWTAB,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,172,56,10
+                    WS_TABSTOP,16,185,56,10
     CONTROL         "ANSI 工具",IDC_FULL_USE_ANSIBAR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,86,172,51,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,86,185,51,10
     CONTROL         "搜尋列",IDC_FULL_SHOWSEARCH,"Button",BS_AUTOCHECKBOX | 
-                    NOT WS_VISIBLE | WS_TABSTOP,141,172,40,10
+                    NOT WS_VISIBLE | WS_TABSTOP,141,185,40,10
     CONTROL         "Web 工具列",IDC_FULL_SHOWWB,"Button",BS_AUTOCHECKBOX | 
-                    NOT WS_VISIBLE | WS_TABSTOP,195,172,57,10
+                    NOT WS_VISIBLE | WS_TABSTOP,195,185,57,10
     CONTROL         "啟動自動更新",IDC_ENABLE_AUTOUPDATE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,167,87,64,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,167,82,64,10
+    CONTROL         "新分頁產生在現在分頁右邊",IDC_NT_IN_NWT_RIGHT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,127,112,10
+    CONTROL         "關閉所有其他分頁前要詢問",IDC_CLOSEOTHER_QUERY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,52,112,10
+    GROUPBOX        "除錯",IDC_STATIC,7,209,257,34
+    LTEXT           "記憶體傾印：",IDC_STATIC,15,225,49,10
+    COMBOBOX        IDC_MINIDUMP,65,222,112,56,CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+
 END
 
 IDD_HYPERLINK DIALOG DISCARDABLE  0, 0, 276, 209
@@ -545,8 +553,8 @@ BEGIN
     EDITTEXT        IDC_EDIT,7,55,270,149,ES_MULTILINE | ES_AUTOVSCROLL | 
                     ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
     ICON            IDR_MAINFRAME,IDC_STATIC,10,9,20,20
-    CTEXT           "PCMan - 開放原始碼的全方位 BBS 瀏覽軟體",
-                    IDC_STATIC,39,7,207,8
+    CTEXT           "PCMan - 開放原始碼的全方位 BBS 瀏覽軟體",IDC_STATIC,39,
+                    7,207,8
     PUSHBUTTON      "參觀開發專案網頁",IDC_WEB2,157,208,69,14
     LTEXT           "",IDC_VERSION,42,45,220,8
 END
@@ -693,6 +701,11 @@ IDR_CLOSEBTN            BITMAP  DISCARDABLE     "res\\toolbar1.bmp"
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
+    IDD_GENERAL, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 211
+    END
+
     IDD_ABOUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -753,8 +766,29 @@ BEGIN
     ID_ABOUT                "\n關於這個軟體"
     ID_TOOL_SYMBOLS         "\n標點符號輸入程式"
     ID_ANSICOPY             "\n複製 (包含 ANSI 彩色)"
-	ID_NCIKU				"\n英漢字典(查詢反白文字)"
-	ID_WIKIPEDIA			"\n維基百科(查詢反白文字)"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_SITELIST_UPDATE_FAIL "更新失敗!"
+    IDS_WEB_SEARCH          "搜尋網頁"
+    IDS_PROMPT_IMPORT       "PCMan 偵測到目錄中有舊版 PCMan 2004 設定檔，格式和新版使用的並不相容。\n\n建議您上官方網站 http://pcman.openfoundry.org/faq.html 參考如何匯入舊版設定檔的說明。"
+    IDS_PCMAN_CLOSE         "PCMan 即將關閉"
+    IDS_INSTALL_UPDATE      "PCMan 現在會關閉以安裝更新"
+    IDS_MOUSE_GESTURE       "滑鼠手勢"
+    IDS_UNKNOWN_GESTURE     "未知的手勢"
+    IDS_TRANSLATION         "即時翻譯"
+    ID_NCIKU                "\n英漢字典(查詢反白文字)"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_WIKIPEDIA            "\n維基百科(查詢反白文字)"
+    IDS_CLOSE_ALL_OTHER_PAGES "關閉所有其他分頁"
+	IDS_MINIDUMP               "程式錯誤，即將關閉。是否開啟記憶體傾印資料夾？"
+	IDS_MINIDUMP_TYPE_NORMAL   "精簡 (Normal)"
+	IDS_MINIDUMP_TYPE_WITHDATA "含資料 (WithDataSegs)"
+	IDS_MINIDUMP_TYPE_WITHFULL "完整 (WithFullMemory)"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -828,7 +862,6 @@ BEGIN
     IDS_REPLACE             "取代"
     IDS_NOT_SAVED           "尚未儲存"
     IDS_CLOSE_THIS_PAGE     "關閉這個分頁 (&C)"
-	IDS_CLOSE_ALL_OTHER_PAGES "關閉所有其他分頁"
     IDS_SET_DEFALT_TELNET   "是否將 PCMan 設為預設的 Telnet 程式?"
     IDS_SET_DEFAULT_BROWSER "是否將 PCMan 設為預設的瀏覽器?"
 END
@@ -892,18 +925,6 @@ BEGIN
     IDS_TEST                "TEST"
     IDS_WAV_FILTER          "WAV 音效檔 (*.wav)|*.wav|"
     IDS_SITELIST_UPDATE_SUCCESS "更新完成!"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_SITELIST_UPDATE_FAIL "更新失敗!"
-    IDS_WEB_SEARCH          "搜尋網頁"
-    IDS_PROMPT_IMPORT       "PCMan 偵測到目錄中有舊版 PCMan 2004 設定檔，格式和新版使用的並不相容。\n\n建議您上官方網站 http://pcman.openfoundry.org/faq.html 參考如何匯入舊版設定檔的說明。"
-    IDS_PCMAN_CLOSE         "PCMan 即將關閉"
-    IDS_INSTALL_UPDATE      "PCMan 現在會關閉以安裝更新"
-    IDS_MOUSE_GESTURE       "滑鼠手勢"
-    IDS_UNKNOWN_GESTURE     "未知的手勢"
-    IDS_TRANSLATION         "即時翻譯"
 END
 
 STRINGTABLE DISCARDABLE 
