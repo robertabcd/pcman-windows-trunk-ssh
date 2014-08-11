@@ -48,6 +48,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(ProjectName)\$(Configuration)\PCMan\</OutDir>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
+    <TargetName>PCMan</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</OutDir>
