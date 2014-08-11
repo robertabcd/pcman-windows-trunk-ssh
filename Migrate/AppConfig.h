@@ -125,7 +125,7 @@ public:
 	BYTE fullscr_showads;
 	BYTE fullscr_showclose;
 	BYTE full_use_ansi_bar;
-
+	BYTE m_bNewTab_InNowTabNei;//new tab in now tab right side
 	BYTE minimize_to_tray;
 	WORD pcman_hotkey;
 	WORD pcman_hotkey_mod;
@@ -233,7 +233,7 @@ inline void CAppConfig::Default()
 	fullscr_showads = 1;
 	fullscr_showclose = 1;
 	full_use_ansi_bar = 0;
-
+	m_bNewTab_InNowTabNei = 0;
 	minimize_to_tray = 0;
 	pcman_hotkey = 0xc0;	//'`'
 	pcman_hotkey_mod = MOD_ALT;

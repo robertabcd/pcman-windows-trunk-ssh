@@ -10,6 +10,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // CWebPageDlg dialog
 
+#include <afxwin.h>
 #include "../Resource/resource.h"
 
 class CWebPageDlg : public CDialog

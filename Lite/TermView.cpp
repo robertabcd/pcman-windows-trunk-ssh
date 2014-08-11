@@ -27,9 +27,13 @@
 
 #include "OleImage.h"
 
+#if defined(_DEBUG)
+#include "minidump.h"
+#endif
+
 #if defined	_COMBO_
 #include "../Combo/WebPageDlg.h"
-#include "../Combo/WebConn.h"
+#include "../Combo/WebConnIE.h"
 #include "../Combo/WebCfgPage.h"
 #endif
 
@@ -962,15 +966,7 @@ void CTermView::OnContextMenu(CWnd* pWnd, CPoint point)
 		HMENU sub=inf.hSubMenu;	UINT wID=inf.wID;
 	*/
 
-	CString sel;
-	try
-	{
-		sel = GetSelText();
-	}
-	catch (...)
-	{
-		sel = _T("");
-	}
+	CString sel = GetSelText();
 
 	if (sel.GetLength() > 0)
 	{
@@ -1101,45 +1097,6 @@ void CTermView::SetScrollBar()
 		EnableScrollBar(SB_VERT, ESB_DISABLE_BOTH);
 	else
 		EnableScrollBar(SB_VERT, ESB_ENABLE_BOTH);
-}
-
-void CTermView::OnDisConnect()
-{
-#if defined	_COMBO_
-	if (!con)
-		return;
-
-	if (!telnet)
-	{
-		((CWebConn*)con)->web_browser.wb_ctrl.Stop();
-		return;
-	}
-#else
-	if (!telnet)
-		return;
-#endif
-
-	if (telnet->is_connecting || telnet->is_lookup_host)
-	{
-		parent->OnConnectClose();
-		return;
-	}
-
-	if (!telnet->is_ansi_editor)
-	{
-		telnet->Shutdown();
-		telnet->Close();
-		telnet->ClearAllFlags();
-		telnet->is_disconnected = true;
-		telnet->site_settings.auto_reconnect = 0;
-
-		int idx = 0;
-		TCITEM tcitem;
-		tcitem.mask = TCIF_IMAGE;
-		tcitem.iImage = 1;
-		idx = parent->ConnToIndex(telnet);
-		parent->tab.SetItem(idx, &tcitem);
-	}
 }
 
 void CTermView::OnSetFocus(CWnd* pOldWnd)
@@ -1464,16 +1421,6 @@ void CTermView::ReConnect(CTelnetConn *retelnet)
 	}
 }
 
-void CTermView::OnReconnect()
-{
-	if (telnet)
-		ReConnect(telnet);
-#if defined	_COMBO_
-	else if (con)
-		((CWebConn*)con)->web_browser.wb_ctrl.Refresh();
-#endif
-}
-
 void CTermView::OnHistory(UINT id)
 {
 	if (AppConfig.favorites.history.GetSize() > 0)
@@ -1562,6 +1509,11 @@ void CTermView::OnAnsiSaveAs()
 CString CTermView::GetSelAnsi()
 {
 	CString data;
+
+	// Check telnet. Otherwise it crashes after right-click if there is no session.
+	if (telnet == NULL)
+		return data;
+
 	if (telnet->sel_end.x != telnet->sel_start.x || telnet->sel_end.y != telnet->sel_start.y)
 	{
 		UINT tmp;
@@ -1813,15 +1765,20 @@ void CTermView::UpdateBkgnd()
 			{
 				COleImage img;
 				COleImage::Initialize();
-				img.LoadFromFile(AppConfig.bkpath);
-				bk = img.CopyBitmap();
-				COleImage::Finalize();
+				if (img.LoadFromFile(AppConfig.bkpath))
+				{
+					bk = img.CopyBitmap();
+					COleImage::Finalize();
+				}
 			}
 		}
 
 		if (!bk)
 		{
-			MessageBox(LoadString(IDS_LOAD_PIC_FAILED), LoadString(IDS_ERR), MB_OK | MB_ICONSTOP);
+			CString msg = LoadString(IDS_LOAD_PIC_FAILED);
+			msg.Append("\n");
+			msg.Append(AppConfig.bkpath);
+			MessageBox(msg.GetBuffer(), LoadString(IDS_ERR), MB_OK | MB_ICONSTOP);
 			AppConfig.bktype = 0;
 			AppConfig.bkpath.Empty();
 			return;
@@ -2463,48 +2420,6 @@ void CTermView::OnSmoothDraw()
 	Invalidate(FALSE);
 }
 
-#if defined	_COMBO_
-BOOL CTermView::SetWindowPos(const CWnd *pWndInsertAfter, int x, int y, int cx, int cy, UINT nFlags)
-{
-	if (con && !telnet)
-		((CWebConn*)con)->web_browser.SetWindowPos(pWndInsertAfter, x, y, cx, cy, nFlags);
-	return CWnd::SetWindowPos(pWndInsertAfter, x, y, cx, cy, nFlags);
-}
-
-void CTermView::MoveWindow(int x, int y, int nWidth, int nHeight, BOOL bRepaint)
-{
-	CWnd::MoveWindow(x, y, nWidth, nHeight, bRepaint);
-	if (con && !telnet)
-		((CWebConn*)con)->web_browser.MoveWindow(x, y, nWidth, nHeight, bRepaint);
-}
-
-CWebConn* CTermView::ConnectWeb(CString address, BOOL act)
-{
-	CWebConn* newcon = new CWebConn;
-	newcon->web_browser.view = this;
-	newcon->name = newcon->address = address;
-	newcon->web_browser.parent = parent;
-	newcon->web_browser.Create(NULL, NULL, WS_CHILD, CRect(0, 0, 0, 0), parent, 0);
-	newcon->web_browser.wb_ctrl.put_RegisterAsBrowser(TRUE);
-	newcon->web_browser.wb_ctrl.put_RegisterAsDropTarget(TRUE);
-	parent->NewTab(newcon);
-
-	if (!address.IsEmpty())
-	{
-		COleVariant v;
-		COleVariant url = address;
-		newcon->web_browser.wb_ctrl.Navigate2(&url, &v, &v, &v, &v);
-	}
-	if (act)
-		parent->SwitchToConn(newcon);
-	else
-		newcon->web_browser.EnableWindow(FALSE);
-
-	parent->FilterWebConn(newcon);
-	return newcon;
-}
-#endif
-
 void CMainFrame::SendFreqStr(CString str, BYTE inf)
 {
 	if (inf & 1 << 6)	//control
@@ -2521,11 +2436,16 @@ void CMainFrame::SendFreqStr(CString str, BYTE inf)
 		view.telnet->SendString(str);
 }
 
-typedef char*(*strstrfunc)(const char*, const char*);
-typedef char*(*strnrstrfunc)(const char*, const char*, int);
 LRESULT CTermView::OnFind(WPARAM w, LPARAM l)
 {
-	if (!pfinddlg)	return 0;
+	char* line;
+	char* found = NULL;
+	RECT rc;
+	long y;
+	int startx;
+
+	if (!pfinddlg)
+		return 0;
 
 	if (pfinddlg->IsTerminating())
 	{
@@ -2533,71 +2453,95 @@ LRESULT CTermView::OnFind(WPARAM w, LPARAM l)
 		return 0;
 	}
 
-	if (!telnet)	return 0;
+	if (!telnet)
+		return 0;
 
 	CString find_str = pfinddlg->GetFindString();
 
-	char* line;		char* found = NULL;
-	RECT rc;	long y;	int startx;	int endx;
-
-	rc.left = left_margin + telnet->sel_start.x * chw;
-	rc.right = rc.left + find_text.GetLength() * chw;
-	rc.top = top_margin + (telnet->sel_start.y - telnet->scroll_pos) * lineh;
-	rc.bottom = rc.top + lineh;
-
-	bool first_time = (telnet->sel_start.x == telnet->sel_end.x) || (find_str != find_text);
-
-	int first_line = pfinddlg->MatchWholeWord() ? 0 : telnet->first_line;
-	if (pfinddlg->SearchDown())	//向後搜尋
+	// Old selection area for invalidation.
+	if (telnet->sel_start.y != telnet->sel_end.y)
 	{
-		if (first_time)	//第一次尋找
-		{
-			telnet->sel_start.y = telnet->sel_end.y = first_line;
-			telnet->sel_start.x = telnet->sel_end.x = 0;
-		}
+		// Multi-line selection.
+		rc.left = left_margin;
+		rc.right = left_margin + telnet->site_settings.cols_per_page * chw;
+		rc.top = top_margin + (telnet->sel_start.y - telnet->scroll_pos) * lineh;
+		rc.bottom = top_margin + (telnet->sel_end.y - telnet->scroll_pos) * lineh + lineh;
+	}
+	else
+	{
+		// Single-line selection
+		rc.left = left_margin + telnet->sel_start.x * chw;
+		rc.right = left_margin + telnet->sel_end.x * chw;
+		rc.top = top_margin + (telnet->sel_start.y - telnet->scroll_pos) * lineh;
+		rc.bottom = rc.top + lineh;
+	}
 
-		y = telnet->sel_start.y;
-		startx = telnet->sel_start.x;
-		endx = telnet->sel_end.x;
-		line = telnet->screen[y] + endx;
-
-		if (pfinddlg->MatchCase())
+	if (pfinddlg->SearchDown())
+	{
+		// Search forward/down
+		if (telnet->sel_start.y != telnet->sel_end.y
+			|| telnet->sel_start.x != telnet->sel_end.x)
 		{
-			found = strstr(line, find_str);
+			// We've found something before? Search next.
+			y = telnet->sel_end.y;
+			line = telnet->screen[y] + telnet->sel_end.x;
 		}
 		else
 		{
-			found = strstri(line, find_str);
+			// A fresh new search.
+			y = telnet->first_line;
+			line = telnet->screen[y];
 		}
 
-		while (!found)
+		do
 		{
-			y++;
-			if (y >= telnet->site_settings.line_count)
+			if (pfinddlg->MatchCase())
+				found = strstr(line, find_str);
+			else
+				found = strstri(line, find_str);
+
+			if (found || (y + 1) >= telnet->site_settings.line_count)
 				break;
-			endx = 0;
-			line = telnet->screen[y];
-		}
-	}
-	else	//向前搜尋
-	{
-		strnrstrfunc pstrnrstr = pfinddlg->MatchCase() ? strnrstr : strnrstri;
-		if (first_time)	//第一次尋找
-		{
-			telnet->sel_start.y = telnet->sel_end.y = telnet->last_line;
-			telnet->sel_start.x = telnet->sel_end.x = telnet->site_settings.cols_per_page;
-		}
-		y = telnet->sel_end.y;
-		startx = telnet->sel_start.x;
-		endx = telnet->sel_end.x;
-		line = telnet->screen[y];
+			y++;
 
-		while (!(found = (*pstrnrstr)(line, find_str, startx)) && y > first_line)
+			line = telnet->screen[y];
+		} while (true);
+	}
+	else
+	{
+		int cols_per_page = telnet->site_settings.cols_per_page;
+		int limit = cols_per_page; // found should proceeds sel_start.x
+
+		// Search backward/up
+		if (telnet->sel_start.y != telnet->sel_end.y
+			|| telnet->sel_start.x != telnet->sel_end.x)
 		{
-			y--;
-			startx = telnet->site_settings.cols_per_page;
+			// We've found something before? Search next.
+			y = telnet->sel_start.y;
+			line = telnet->screen[y];
+			limit = telnet->sel_end.x - 1;
+		}
+		else
+		{
+			// A fresh new search.
+			y = telnet->last_line;
 			line = telnet->screen[y];
 		}
+
+		do
+		{
+			if (pfinddlg->MatchCase())
+				found = strnrstr(line, find_str, limit);
+			else
+				found = strnrstri(line, find_str, limit);
+
+			if (found || y <= telnet->first_line)
+				break;
+			limit = cols_per_page;
+			y--;
+
+			line = telnet->screen[y];
+		} while (true);
 	}
 
 	if (found)	//如果有找到
@@ -2617,14 +2561,16 @@ LRESULT CTermView::OnFind(WPARAM w, LPARAM l)
 		}
 	}
 
-	rc.left = left_margin + startx * chw;
-	rc.right = rc.left + find_str.GetLength() * chw;
-	rc.top = top_margin + (y - telnet->scroll_pos) * lineh;
-	rc.bottom = rc.top + lineh;
-	InvalidateRect(&rc, FALSE);
-
 	if (!found)
 		MessageBox(LoadString(IDS_NOT_FOUND) + " " + find_str);
+	else
+	{
+		rc.left = left_margin + startx * chw;
+		rc.right = rc.left + find_str.GetLength() * chw;
+		rc.top = top_margin + (y - telnet->scroll_pos) * lineh;
+		rc.bottom = rc.top + lineh;
+		InvalidateRect(&rc, FALSE);
+	}
 
 	find_text = find_str;
 	return 0;
@@ -2637,13 +2583,14 @@ LRESULT CTermView::OnFind(WPARAM w, LPARAM l)
 
 void CTermView::FindStart()
 {
-	telnet->sel_end.x = 0;
-	telnet->sel_start = telnet->sel_end;
+	static char find_what[1024];
+
 	if (!pfinddlg)
 	{
 		pfinddlg = new CFindReplaceDialog;
-		pfinddlg->m_fr.lpstrFindWhat = (LPTSTR)(LPCTSTR)find_text;
 		pfinddlg->Create(TRUE, NULL, NULL, FR_DOWN, this);
+		pfinddlg->m_fr.lpstrFindWhat = find_what;
+		pfinddlg->m_fr.wFindWhatLen = sizeof (find_what);
 		pfinddlg->GetDlgItem(chx1)->SetWindowText(LoadString(IDS_FIND_IN_ALL_BUF));	//"尋找整個緩衝區(&B)"
 		pfinddlg->ShowWindow(SW_SHOW);
 	}
@@ -2778,10 +2725,14 @@ void CTermView::OnUpdateBBSList()
 	ShellExecute(AfxGetMainWnd()->m_hWnd, "open", AppPath + "UBL.exe", AppPath + "sites.dat", AppPath, SW_SHOW);
 }
 
-
 CString CTermView::GetSelText()
 {
 	CString ret;
+
+	// Check telnet. Otherwise it crashes after right-click if there is no session.
+	if (telnet == NULL)
+		return ret;
+
 	if (telnet->sel_end.x != telnet->sel_start.x || telnet->sel_end.y != telnet->sel_start.y)
 	{
 		UINT tmp;
@@ -2873,12 +2824,26 @@ CString CTermView::GetSelText()
 
 LRESULT CTermView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if (AppConfig.lock_pcman &&
-		message != WM_TIMER &&
-		message != WM_SOCKET &&
-		message != WM_DNSLOOKUP_END)
-		return 0;
-	return CWnd::WindowProc(message, wParam, lParam);
+#ifdef _DEBUG
+	/* BUG: Unhandled exception filter not called inside debugger
+	   http://support.microsoft.com/kb/173652
+	   This wrapper is used so we can debug UnhandledExceptionFilter itself.  */
+	__try
+	{
+#endif
+		if (AppConfig.lock_pcman &&
+			message != WM_TIMER &&
+			message != WM_SOCKET &&
+			message != WM_DNSLOOKUP_END)
+			return 0;
+		return CWnd::WindowProc(message, wParam, lParam);
+#ifdef _DEBUG
+	}
+	__except (Minidump::UnhandledExceptionFilter(GetExceptionInformation()))
+	{
+	}
+	return FALSE;
+#endif
 }
 
 

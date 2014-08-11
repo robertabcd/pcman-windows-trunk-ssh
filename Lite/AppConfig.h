@@ -84,6 +84,7 @@ public:
 	BYTE multiple_instance;
 	BYTE scrolltab;
 	BYTE close_query;
+	BYTE closeother_query;
 	BYTE dblclk_close;
 	BYTE tab_add_number;
 	BYTE tab_button;
@@ -108,9 +109,12 @@ public:
 	WORD pcman_hotkey;
 	WORD pcman_hotkey_mod;
 
+	enum { dumptype_none, dumptype_normal, dumptype_data, dumptype_full };
+	BYTE minidump_type;
+
 	int max_history;
 //	int max_history_menu;
-
+	BYTE m_bNewTab_InNowTabNei;//新分頁是否在現在分頁旁邊
 //  Charset Setting
 	BYTE saved_charset;
 
@@ -189,6 +193,7 @@ public:
 	BYTE disable_script_error;
 	BYTE use_ie_fav;
 	BYTE autowrap_favorite;
+	BYTE web_close_query;
 	short search_engine;
 
 	CStringArray webpage_filter;
@@ -209,6 +214,7 @@ inline void CAppConfig::Default()
 	multiple_instance = 0;
 	scrolltab = 0;
 	close_query = 1;
+	closeother_query = 1;
 	dblclk_close = 1;
 	tab_add_number = 1;
 	tab_button = 1;
@@ -232,7 +238,8 @@ inline void CAppConfig::Default()
 	minimize_to_tray = 0;
 	pcman_hotkey = 0xc0;	//'`'
 	pcman_hotkey_mod = MOD_ALT;
-
+	m_bNewTab_InNowTabNei = 0;//新分頁在最右邊
+	minidump_type = dumptype_data;
 #ifdef _COMBO_
 	max_history = 600;
 //	max_history_menu=20;
@@ -324,6 +331,7 @@ inline void CAppConfig::Default()
 	disable_script_error = 1;
 	use_ie_fav = 1;
 	autowrap_favorite = 1;
+	web_close_query = 0;
 	search_engine = 0;
 #endif
 };

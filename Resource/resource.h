@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by Combo.rc
+// Microsoft Visual C++ generated include file.
+// Used by Common.rc
 //
 #define IDC_DEFAULT                     3
 #define IDC_ADD                         3
@@ -122,6 +122,7 @@
 #define IDC_SEARCHBAR_CLEANUP           152
 #define IDD_HOTSTR                      153
 #define ID_MOVIETIMER                   153
+#define IDC_WEB_CLOSEQUERY              153
 #define IDD_CUSTOMIZEKEY                154
 #define IDD_STRINGS                     159
 #define IDI_SITE                        160
@@ -314,6 +315,7 @@
 #define IDC_FULL_SHOWSEARCH             1106
 #define IDC_SPIN_MAX_HISTORY            1107
 #define IDC_STATIC1                     1107
+#define IDC_CLOSEOTHER_QUERY            1107
 #define IDC_STATIC2                     1108
 #define IDC_PAGESPIN                    1109
 #define IDC_KEYLIST                     1109
@@ -327,6 +329,7 @@
 #define IDC_COMBO1                      1117
 #define IDC_TRAN_COMB                   1117
 #define IDC_TRAN_COMBO                  1117
+#define IDC_MINIDUMP                    1117
 #define IDC_COMBO2                      1118
 #define IDC_KEYMAP                      1118
 #define IDC_LENGTH_COMBO                1118
@@ -347,6 +350,8 @@
 #define IDC_USE_GLOBAL_SETTINGS         1137
 #define IDC_VERSION                     1138
 #define IDC_MAX_TRANLENSPIN             1141
+#define IDC_NEWTAB_RIGHT                1142
+#define IDC_NT_IN_NWT_RIGHT             1142
 #define IDR_BUILD_UI                    1234
 #define IDR_MAINMENU                    1236
 #define ID_LAST_WEB_FAVORITE            6000
@@ -631,6 +636,10 @@
 #define ID_SEARCHBAR_CLEANUP            33040
 #define IDS_CLOSE_ALL_OTHER_PAGES       33041
 #define ID_CONNECT_CLOSE_ALL_OTHERS     33042
+#define IDS_MINIDUMP                    33043
+#define IDS_MINIDUMP_TYPE_NORMAL        33044
+#define IDS_MINIDUMP_TYPE_WITHDATA      33045
+#define IDS_MINIDUMP_TYPE_WITHFULL      33046
 
 // Next default values for new objects
 // 
@@ -638,7 +647,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        189
 #define _APS_NEXT_COMMAND_VALUE         33041
-#define _APS_NEXT_CONTROL_VALUE         1142
-#define _APS_NEXT_SYMED_VALUE           154
+#define _APS_NEXT_CONTROL_VALUE         1143
+#define _APS_NEXT_SYMED_VALUE           155
 #endif
 #endif

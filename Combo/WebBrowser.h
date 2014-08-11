@@ -19,7 +19,7 @@
 
 class CMainFrame;
 class CTermView;
-class CWebConn;
+class WebConnIE;
 
 #define HTMLID_FIND 1
 #define HTMLID_VIEWSOURCE 2
@@ -32,7 +32,7 @@ class CWebBrowser : public CWnd
 public:
 	static CMainFrame* parent;
 	static CTermView* view;
-	CWebConn* web_conn;
+	WebConnIE* web_conn;
 	long pgs;
 	long pgsmax;
 

@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "StrUtils.h"
+#include "Ucs2Conv.h"
+
+extern CUcs2Conv g_ucs2conv;
 
 //case sensitive
 char* strrstr(const char* str, const char* sub)
@@ -156,11 +159,23 @@ char* MultiByteToMultiByte(UINT srcCodePage, UINT destCodePage, LPCSTR srcStr, i
 	char* destStr;
 	int uniLen;
 	int destLen;
+	UINT codePage;
 
-	// convert an multi-byte to unicode(utf-16)
+	codePage = ::GetACP();
 	uniLen = MultiByteToWideChar(srcCodePage, 0, srcStr, -1, NULL, NULL);
 	uniStr = new WCHAR[uniLen];
-	uniLen = MultiByteToWideChar(srcCodePage, 0, srcStr, -1, uniStr, uniLen);
+	if(srcCodePage==950 || (srcCodePage==0&&codePage==950))
+	{
+		// use CUcs2Conv to convert
+		memset(uniStr, 0, uniLen*sizeof(WCHAR));
+		g_ucs2conv.Big52Ucs2(srcStr, uniStr);
+		
+	}
+	else
+	{
+		// convert an multi-byte to unicode(utf-16)
+		uniLen = MultiByteToWideChar(srcCodePage, 0, srcStr, -1, uniStr, uniLen);
+	}
 
 	// convert back to utf-8
 	destLen = WideCharToMultiByte(destCodePage, 0, uniStr, uniLen, NULL, NULL, NULL, NULL);
@@ -297,7 +312,7 @@ UINT Base64Encode(BYTE* in, UINT inlen, BYTE* out, UINT outlen)
 {
 // FIXME: The performancfe of this API should be improved.
 	if (out == NULL)
-		return (inlen / 3 + inlen % 3) * 4;
+		return ((inlen + 2) / 3) * 4;
 	outlen -= outlen % 4;
 	int pad = inlen % 3;
 	BYTE* _out = out;

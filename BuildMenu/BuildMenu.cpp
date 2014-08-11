@@ -109,9 +109,16 @@ BOOL CBuildMenuApp::InitInstance()
 	CString OutPath(m_lpCmdLine);
 	OutPath += '\\';
 	OutPath += UI_FILENAME;
+	BOOL r;
 
 //	MessageBox( NULL, OutPath, NULL, MB_OK );
-	ui.Open(OutPath, CFile::modeWrite | CFile::modeCreate);
+	r = ui.Open(OutPath, CFile::modeWrite | CFile::modeCreate);
+	if (!r)
+	{
+		TCHAR buf[2048];
+		_sntprintf (buf, sizeof (buf), _T("Failed to open UI file, %s"), OutPath);
+		::MessageBox(NULL, buf, "Build Menu Failed", MB_OK | MB_ICONERROR);
+	}
 
 	HACCEL hacc = LoadAccelerators(AfxGetInstanceHandle(), LPSTR(IDR_BUILD_UI));
 	WORD c = CopyAcceleratorTable(hacc, NULL, 0);

@@ -261,7 +261,9 @@ CString CSearchPluginCollection::UrlForSearch(int index, CString searchTerm, boo
 			utf8Len = searchTerm.GetLength();
 		}
 		else
+		{
 			utf8Str = MultiByteToUTF8(searchTerm, &utf8Len);
+		}
 		//utf8Str = MultiByteToMultiByte( CP_ACP, CP_UTF8, searchTerm, &utf8Len );
 		for (int i = 0; i < utf8Len; i++)
 		{

@@ -13,7 +13,7 @@
 #define VC_EXTRALEAN		// Exclude rarely-used stuff from Windows headers
 
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT  0x0500
+#define _WIN32_WINNT	0x0501  /* _WIN32_WINNT_WINXP */
 #endif
 
 // For advanced menu functionality (Win 98 or lator)
@@ -61,6 +61,8 @@ inline CString LoadString(UINT id)
 #include <vector>
 #include <map>
 #include <algorithm>
+
+#include <windows.h>
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.

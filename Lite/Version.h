@@ -1,24 +1,24 @@
 //Generated from Version_Create.bat "Version_Set_Lite.bat" 
 // 
-#define FILEVER            9,2,0,0 
-#define FILEVER_STRA       "9,2,0,0\0" 
-#define FILEVER_DOT_STRA       "9.2.0.0\0" 
-#define FILEVER_DOT_STRW       L"9.2.0.0\0" 
+#define FILEVER            9,4,2,542
+#define FILEVER_STRA       "9,4,2,542\0"
+#define FILEVER_DOT_STRA       "9.4.2.542\0"
+#define FILEVER_DOT_STRW       L"9.4.2.542\0"
 // 
-#define PRODUCTVER         9,2,0,0 
-#define PRODUCTVER_STRA    "9,2,0,0\0" 
-#define PRODUCTVER_DOT_STRA    "9.2.0.0\0" 
-#define PRODUCTVER_DOT_STRW    L"9.2.0.0\0" 
+#define PRODUCTVER         9,4,2,542
+#define PRODUCTVER_STRA    "9,4,2,542\0"
+#define PRODUCTVER_DOT_STRA    "9.4.2.542\0"
+#define PRODUCTVER_DOT_STRW    L"9.4.2.542\0"
 // 
-#define Version_Major 9 
-#define Version_Minor 2 
-#define Version_PatchLevel 0 
-#define Version_BuildNumber   0 
+#define Version_Major 9
+#define Version_Minor 4
+#define Version_PatchLevel 2
+#define Version_BuildNumber   542
 // 
-#define Version_RevDateA   "2007/6/27 12:24" 
-#define Version_RevDateW   "2007/6/27 12:24" 
+#define Version_RevDateA   "2013/03/30 22:38:13"
+#define Version_RevDateW   "2013/03/30 22:38:13"
 // 
-#define Version_UseSvnBuildNumber   0 
+#define Version_UseSvnBuildNumber   1 
 // 
 #define Version_CompanyNameA   "PCMan\0" 
 #define Version_CompanyNameW   L"PCMan\0" 

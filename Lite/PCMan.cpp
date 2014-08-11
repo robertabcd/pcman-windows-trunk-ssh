@@ -11,6 +11,12 @@
 
 #include "SearchPlugin.h"
 #include "OleImage.h"
+#include "Minidump.h"
+
+/* On some computer, Visual Style will not be enabled without this.  */
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #ifdef	_COMBO_
 //	#include <..\src\occimpl.h>
@@ -24,6 +30,13 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
+#endif
+
+#ifdef	_COMBO_
+#include "..\Combo\WebManagerIE.h"
+#include "..\Combo\WebManagerCEF.h"
+
+WebManager *g_webmanager;
 #endif
 
 CString AppPath;
@@ -56,6 +69,27 @@ CApp theApp;
 
 BOOL CApp::InitInstance()
 {
+#if defined (_COMBO_)
+	//g_webmanager = new WebManagerIE();
+	g_webmanager = new WebManagerCEF();
+	if (g_webmanager->OnAppStart(m_hInstance) >= 0)
+	{
+		return FALSE;
+	}
+#endif
+	// In newer Windows SDK, LoadString() uses CP_THREAD_ACP for converting string,
+	// i.e., first argument of WideCharToMultiByte(). On some non-Chinese version Windows,
+	// e.g., English version with Chinese locale, thread-locale is by default 1033 (English)
+	// instead of user locale 1028 (Chinese). I'm not sure why.
+	// To workaround this issue, either we change the thread locale to user locale,
+	// or use CP_ACP instead of CP_THREAD_ACP (defining _CONVERSION_DONT_USE_THREAD_LOCALE)
+	// for converting string. See the following functions/macros for details
+	// LoadString() -> StringTraits::ConvertToBaseType() -> _AtlGetConversionACP()
+	// CP_ACP/CP_THREAD_ACP
+	SetThreadLocale(GetUserDefaultLCID());
+
+	Minidump::RegisterHandler();
+
 	DBG_INIT(1);
 
 	// Find other existing instances
@@ -105,30 +139,26 @@ BOOL CApp::InitInstance()
 		ConfigPath.ReleaseBuffer();
 		if (ret)
 		{
+			LPCTSTR configFiles[] = {
+				CONFIG_FILENAME, UI_FILENAME, FUS_FILENAME,
+				BBS_FAVORITE_FILENAME, TOOLBAR_BMP_FILENAME, ICON_BMP_FILENAME,
+#if defined(_COMBO_)
+				WEB_ICON_BMP_FILENAME,
+#endif
+			};
+
 #if defined (_COMBO_)
 			ConfigPath += "\\PCMan Combo\\";
 #else
 			ConfigPath += "\\PCMan\\";
 #endif
-			if (!IsFileExist(ConfigPath))	// Copy default settings when necessary
-			{
-				CreateDirectory(ConfigPath, NULL);
-				// AppConfig.BackupConfig( DefaultConfigPath, ConfigPath );
-				CopyFile(DefaultConfigPath + CONFIG_FILENAME, ConfigPath + CONFIG_FILENAME, TRUE);
-				CopyFile(DefaultConfigPath + UI_FILENAME, ConfigPath + UI_FILENAME, TRUE);
-				CopyFile(DefaultConfigPath + FUS_FILENAME, ConfigPath + FUS_FILENAME, TRUE);
-				CopyFile(DefaultConfigPath + BBS_FAVORITE_FILENAME, ConfigPath + BBS_FAVORITE_FILENAME, TRUE);
 
-				CopyFile(DefaultConfigPath + TOOLBAR_BMP_FILENAME, ConfigPath + TOOLBAR_BMP_FILENAME, TRUE);
-				CopyFile(DefaultConfigPath + ICON_BMP_FILENAME, ConfigPath + ICON_BMP_FILENAME, TRUE);
-#if defined(_COMBO_)
-				CopyFile(DefaultConfigPath + WEB_ICON_BMP_FILENAME, ConfigPath + WEB_ICON_BMP_FILENAME, TRUE);
-#endif
-			}
-			if (!IsFileExist(ConfigPath + UI_FILENAME))
-			{
-				CopyFile(DefaultConfigPath + UI_FILENAME, ConfigPath + UI_FILENAME, TRUE);
-			}
+			if (!IsFileExist(ConfigPath))
+				CreateDirectory(ConfigPath, NULL);
+
+			/* Always copy config files, but DO NOT overwrite.  */
+			for (int i = 0; i < sizeof(configFiles) / sizeof(configFiles[0]); i++)
+				CopyFile(DefaultConfigPath + configFiles[i], ConfigPath + configFiles[i], TRUE);
 		}
 		else
 			ConfigPath.ReleaseBuffer();
@@ -196,6 +226,27 @@ BOOL CApp::InitInstance()
 	SetWindowLong(m_pMainWnd->m_hWnd, GWL_USERDATA, !AppConfig.multiple_instance);
 	pFrame->OnAutoUpdate();
 	return TRUE;
+}
+
+int CApp::ExitInstance()
+{
+#if defined (_COMBO_)
+    int exitcode = g_webmanager->OnAppEnd();
+    if (exitcode > 0)
+    {
+        return exitcode;
+    }
+
+    delete g_webmanager;
+#endif
+
+    WSACleanup();
+    return CWinApp::ExitInstance();
+}
+
+BOOL CApp::OnIdle( LONG lCount )
+{
+    return g_webmanager->OnMessageLoopIdle() ? TRUE : FALSE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -301,12 +352,6 @@ void CAboutDlg::OnHelp()
 	if ((long)ShellExecute(m_hWnd, "open", AppPath + "pcman.html", NULL, NULL, SW_SHOWMAXIMIZED) <= 32)
 		ShellExecute(m_hWnd, "open", web, NULL, NULL, SW_SHOWMAXIMIZED);
 #endif
-}
-
-int CApp::ExitInstance()
-{
-	WSACleanup();
-	return CWinApp::ExitInstance();
 }
 
 BOOL CAboutDlg::OnInitDialog()

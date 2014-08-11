@@ -39,6 +39,7 @@ const char TINYURL_TEMP_FILENAME[] = "Tinyurl";
 
 #define ID_MOUSE_SEL_TIMER	100
 
+class WebConn;
 class CMainFrame : public CFrameWnd
 {
 public:
@@ -274,7 +275,7 @@ public:
 	//}}AFX_MSG
 
 	void OnFavorite(UINT id);
-	LRESULT OnDownloadPage(WPARAM, LPARAM);
+	afx_msg LRESULT OnDownloadPage(WPARAM w, LPARAM l);
 
 #if	_MFC_VER >= 0x0700
 	afx_msg void OnActivateApp(BOOL bActive, DWORD hTask);
@@ -325,7 +326,7 @@ public:
 	BOOL FindAdFilter(LPCTSTR title, LPCTSTR address);
 	CEdit edit;
 	LRESULT OnRemoveWebConn(WPARAM wparam, LPARAM lparam);
-	BOOL FilterWebConn(CWebConn* web_conn);
+	BOOL FilterWebConn(WebConn* web_conn);
 	void OnToolbarMenuDropDown(NMHDR* pNMHDR, LRESULT* pResult);
 	void OnSearchBarCancel();
 #endif

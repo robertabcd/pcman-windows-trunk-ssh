@@ -43,7 +43,7 @@ static char THIS_FILE[] = __FILE__;
 #if defined(_COMBO_)
 #include "SearchPlugin.h"
 #include "../Combo/WebBrowser.h"
-#include "../Combo/WebConn.h"
+#include "../Combo/WebConnIE.h"
 #include "Conn.h"
 #include "../Combo/WebCfgPage.h"
 #include "../Combo/WebPageDlg.h"
@@ -752,7 +752,10 @@ void CMainFrame::OnRClickTab(NMHDR *pNMHDR, LRESULT *pResult)
 			pos+=2;
 		}
 		else
-			InsertMenu(popup, pos + 1, MF_STRING | MF_BYPOSITION, ID_CONNECT_CLOSE, close_this_page);
+		{
+			InsertMenu(popup, pos + 1, MF_STRING | MF_BYPOSITION, ID_CONNECT_CLOSE_ALL_OTHERS, close_all_other_pages);
+			InsertMenu(popup, pos + 2, MF_STRING | MF_BYPOSITION, ID_CONNECT_CLOSE, close_this_page);
+		}
 
 		::TrackPopupMenu(popup, TPM_RIGHTBUTTON | TPM_LEFTALIGN, pt.x, pt.y, 0, m_hWnd, NULL);
 		DeleteMenu(popup, pos, MF_BYPOSITION);
@@ -1298,15 +1301,6 @@ void CMainFrame::OnUpdateCloseBtn(CCmdUI* pCmdUI)
 
 #if defined(_COMBO_)
 
-BOOL CMainFrame::FilterWebConn(CWebConn *web_conn)
-{
-	BOOL Close = FindAdFilter(web_conn->web_browser.GetLocationName(),
-							  web_conn->web_browser.GetLocationURL());
-	if (Close)
-		PostMessage(WM_REMOVE_WEBCONN, 0, LPARAM(web_conn));
-	return Close;
-}
-
 BOOL CMainFrame::FindAdFilter(LPCTSTR title, LPCTSTR address)
 {
 	CString _title;	CString address_bar;
@@ -1350,12 +1344,6 @@ void CMainFrame::OnNewWebConn()
 	OnAdsHttp();
 }
 
-void CMainFrame::OnNewHome()
-{
-	view.ConnectWeb("", TRUE);
-	((CWebConn*)view.con)->web_browser.wb_ctrl.GoHome();
-}
-
 void CMainFrame::OnAdsOpenNew()
 {
 	AppConfig.ads_open_new = !AppConfig.ads_open_new;
@@ -1378,43 +1366,12 @@ void CMainFrame::OnUpdateSearchbarCleanup(CCmdUI* pCmdUI)
 
 LRESULT CMainFrame::OnRemoveWebConn(WPARAM wparam, LPARAM lparam)
 {
-	CWebConn* web_conn = reinterpret_cast<CWebConn*>(lparam);
+	WebConnIE* web_conn = reinterpret_cast<WebConnIE*>(lparam);
 	int i = ConnToIndex(web_conn);
 	if (-1 != i)
 		CloseConn(i);
 	return 0;
 }
-
-void CMainFrame::OnIESetup()
-{
-	typedef BOOL (WINAPI *IEOPTION)(HWND);
-	HMODULE hmod = LoadLibrary("inetcpl.cpl");
-	if (hmod)
-	{
-		IEOPTION SetIE = (IEOPTION)GetProcAddress(hmod, "LaunchInternetControlPanel");
-		SetIE(m_hWnd);
-		FreeLibrary(hmod);
-	}
-}
-
-void CMainFrame::OnWebPagePrint()
-{
-	if (!view.telnet || view.con)
-	{
-		((CWebConn*)view.con)->web_browser.SetFocus();
-		((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_PRINT, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-	}
-}
-
-void CMainFrame::OnWebPagePrintSettings()
-{
-	if (!view.telnet || view.con)
-	{
-		((CWebConn*)view.con)->web_browser.SetFocus();
-		((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_PAGESETUP, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-	}
-}
-
 
 void CMainFrame::OnWebPageOpen()
 {
@@ -1423,21 +1380,6 @@ void CMainFrame::OnWebPageOpen()
 		view.ConnectWeb(dlg.GetPathName(), TRUE);
 }
 
-void CMainFrame::OnWebPageViewSrc()
-{
-	if (!view.con || view.telnet)
-		return;
-	LPDISPATCH lpd = ((CWebConn*)view.con)->web_browser.wb_ctrl.get_Document();
-	if (!lpd)
-		return;
-	IOleCommandTarget* pcmd = NULL;
-	if (SUCCEEDED(lpd->QueryInterface(IID_IOleCommandTarget, (void**)&pcmd)))
-	{
-		pcmd->Exec(&CGID_IWebBrowser, HTMLID_VIEWSOURCE, 0, NULL, NULL);
-		pcmd->Release();
-	}
-	lpd->Release();
-}
 
 void CMainFrame::OnNewCurPage()
 {
@@ -1450,16 +1392,6 @@ void CMainFrame::OnNewCurPageInIE()
 		::ShellExecute(m_hWnd, "open", GetIEPath(), view.con->address, NULL, SW_SHOW);
 }
 
-void CMainFrame::OnWebPageSaveAs()
-{
-	if (!view.telnet || view.con)
-	{
-		((CWebConn*)view.con)->web_browser.SetFocus();
-		((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_SAVEAS, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-	}
-}
-
-
 void CMainFrame::OnBlockPopup()
 {
 	AppConfig.disable_popup = !AppConfig.disable_popup;
@@ -1468,95 +1400,6 @@ void CMainFrame::OnBlockPopup()
 void CMainFrame::OnSearchbarCleanup()
 {
 	AppConfig.searchbar_cleanup = !AppConfig.searchbar_cleanup;
-}
-
-
-void CMainFrame::OnToolbarMenuDropDown(NMHDR *pNMHDR, LRESULT *pResult)
-{
-	LPNMTOOLBAR nmtb = (LPNMTOOLBAR)pNMHDR;
-	RECT rc;
-	toolbar.SendMessage(TB_GETRECT, nmtb->iItem, (LPARAM)&rc);
-	::MapWindowPoints(toolbar.m_hWnd, NULL, LPPOINT(&rc), 2);
-	if (nmtb->iItem == ID_NEW_WWW)
-	{
-		HMENU pop =::GetSubMenu(::GetSubMenu(main_menu, 0), 0);
-		TrackPopupMenu(pop, TPM_LEFTALIGN | TPM_TOPALIGN, rc.left, rc.bottom, 0, m_hWnd, NULL);
-	}
-	else
-	{
-		if (!view.con || !view.con->is_web)
-			return;
-		CMenu pop;
-		CWebConn* web_conn = (CWebConn*)view.con;
-		pop.CreatePopupMenu();
-		if (!web_conn->web_browser.m_TravelLog)
-			return;
-
-		CComPtr<IEnumTravelLogEntry> pTLEnum;
-		web_conn->web_browser.m_TravelLog->EnumEntries(nmtb->iItem == ID_GOBACK
-				? TLEF_RELATIVE_BACK : TLEF_RELATIVE_FORE, &pTLEnum.p);
-		UINT id = 1;
-		if (pTLEnum.p)
-		{
-			CComPtr<ITravelLogEntry> pTLEntry;
-			while (S_FALSE != pTLEnum->Next(1, &pTLEntry.p, NULL))
-			{
-				LPOLESTR title;
-				pTLEntry.p->GetTitle(&title);
-				CString str = title;
-				pop.AppendMenu(MF_STRING, id, str);
-				CoTaskMemFree(title);
-				id++;
-			}
-		}
-		id = pop.TrackPopupMenu(TPM_RETURNCMD | TPM_LEFTALIGN | TPM_TOPALIGN, rc.left, rc.bottom, &view, NULL);
-		if (id > 0)
-			if (nmtb->iItem == ID_GOBACK)
-				web_conn->web_browser.wb_ctrl.GoBack(id);
-			else
-				web_conn->web_browser.wb_ctrl.GoForward(id);
-	}
-}
-
-void CMainFrame::OnGoBack()
-{
-	if (view.con && view.con->is_web)
-		((CWebConn*)view.con)->web_browser.wb_ctrl.GoBack(1);
-}
-
-void CMainFrame::OnGoForward()
-{
-	if (view.con && view.con->is_web)
-		((CWebConn*)view.con)->web_browser.wb_ctrl.GoForward(1);
-}
-
-
-void CMainFrame::OnWebPageAddToAdFilter()
-{
-	if (view.telnet || !view.con)
-		return;
-	CWebConn* web_conn = (CWebConn*)view.con;
-	CAdItem item;
-	item.title = web_conn->web_browser.GetLocationName();
-	item.url = web_conn->web_browser.GetLocationURL();
-	if (item.DoModal() == IDOK)
-	{
-		AppConfig.webpage_filter.Add(item.title + '\t' + item.url);
-		FilterWebConn(web_conn);
-	}
-}
-
-void CMainFrame::OnWebHome()
-{
-	if (view.con)
-	{
-		if (!view.telnet)
-		{
-			((CWebConn*)view.con)->web_browser.wb_ctrl.GoHome();
-			return;
-		}
-	}
-	view.ConnectWeb("", TRUE)->web_browser.wb_ctrl.GoHome();
 }
 
 #endif
@@ -1688,45 +1531,6 @@ void CMainFrame::RecalcLayout(BOOL bNotify)
 	view.MoveWindow(0, top, rc.right, height, TRUE);
 }
 
-void CMainFrame::OnAddressBarComboOK()
-{
-	CString address;
-	int i = address_bar.GetCurSel();
-	if (i == CB_ERR)
-		address_bar.GetWindowText(address);
-	else
-		address_bar.GetLBText(i, address);
-
-	int p = address.ReverseFind('\t');
-	if (p != -1)
-		address = address.Left(p);
-
-#if defined(_COMBO_)
-	// FIXME: We doesn't check for *.ans file here!!
-	if (!AppConfig.ads_open_new && strncmp("telnet://", address, 9) && view.con && !view.telnet)
-	{
-		COleVariant v;
-		COleVariant url = address;
-		((CWebConn*)view.con)->web_browser.wb_ctrl.Navigate2(&url, &v, &v, &v, &v);
-		((CWebConn*)view.con)->web_browser.SetFocus();
-		return;
-	}
-#endif
-
-	OnNewConnectionAds(address);
-}
-
-void CMainFrame::OnAddressComboCancel()
-{
-#if defined(_COMBO_)
-	if (view.con && view.con->is_web)
-		((CWebConn*)view.con)->web_browser.SetFocus();
-	else
-#endif
-		view.SetFocus();
-	UpdateAddressBar();
-}
-
 LRESULT CALLBACK CMainFrame::AddressBarWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	CMainFrame* mainfrm = (CMainFrame*)AfxGetMainWnd();
@@ -1764,13 +1568,6 @@ LRESULT CALLBACK CMainFrame::AddressBarWndProc(HWND hwnd, UINT msg, WPARAM wpara
 }
 
 #if defined(_COMBO_)
-void CMainFrame::OnSearchBarCancel()
-{
-	if (view.con && view.con->is_web)
-		((CWebConn*)view.con)->web_browser.SetFocus();
-	else
-		view.SetFocus();
-}
 
 void CMainFrame::OnWebSearch()
 {
@@ -2017,29 +1814,6 @@ void CMainFrame::OnUpdateIsConnnected(CCmdUI *pCmdUI)
 	pCmdUI->Enable(view.telnet && view.telnet->is_connected);
 }
 
-void CMainFrame::OnUpdateIsSel(CCmdUI *pCmdUI)
-{
-	// don't disable toolbar, or the icons will be grey and very ugly.
-	if (!pCmdUI->m_pMenu)
-		return;
-
-#if defined(_COMBO_)
-	BOOL sel;
-	if (view.con)
-	{
-		if (view.con->is_web)
-			sel = ((CWebConn*)view.con)->web_browser.wb_ctrl.QueryStatusWB(OLECMDID_COPY) & OLECMDF_ENABLED;
-		else
-			sel = (view.telnet->sel_start != view.telnet->sel_end);
-	}
-	else
-		sel = FALSE;
-	pCmdUI->Enable(sel);
-#else
-	pCmdUI->Enable(view.telnet && view.telnet->sel_start != view.telnet->sel_end);
-#endif
-}
-
 void CMainFrame::OnUpdateIsConn(CCmdUI *pCmdUI)
 {
 	if (!pCmdUI->m_pMenu)	// don't disable toolbar
@@ -2077,28 +1851,6 @@ void CMainFrame::OnUpdateIsWebPage(CCmdUI *pCmdUI)
 }
 #endif
 
-void CMainFrame::OnUpdatePaste(CCmdUI *pCmdUI)
-{
-	if (!pCmdUI->m_pMenu)	// don't disable toolbar
-		return;
-
-#ifdef _COMBO_
-	BOOL sel;
-	if (view.con)
-	{
-		if (view.con->is_web)
-			sel = ((CWebConn*)view.con)->web_browser.wb_ctrl.QueryStatusWB(OLECMDID_PASTE) & OLECMDF_ENABLED;
-		else
-			sel = (view.telnet->is_ansi_editor || view.telnet->is_connected);
-	}
-	else
-		sel = FALSE;
-	pCmdUI->Enable(sel);
-#else
-	pCmdUI->Enable(view.telnet ? (view.telnet->is_ansi_editor || view.telnet->is_connected) : 0);
-#endif
-}
-
 void CMainFrame::OnUpdateIsSite(CCmdUI *pCmdUI)
 {
 	if (!pCmdUI->m_pMenu)	// don't disable toolbar
@@ -2118,7 +1870,8 @@ void CMainFrame::OnUpdateShowAnsiBar(CCmdUI *pCmdUI)
 
 void CMainFrame::OnUpdateSelectAll(CCmdUI* pCmdUI)
 {
-	OnUpdateIsBBS(pCmdUI);
+	//OnUpdateIsBBS(pCmdUI);
+    OnUpdateIsConn(pCmdUI);
 }
 
 BOOL CMainFrame::OnToolTipNeedText(UINT id, NMHDR *nmhdr, LRESULT *r)
@@ -2144,16 +1897,6 @@ BOOL CMainFrame::OnToolTipNeedText(UINT id, NMHDR *nmhdr, LRESULT *r)
 }
 
 #if defined(_COMBO_)
-
-void CMainFrame::OnBrowserFontSize(UINT id)
-{
-	if (view.con && view.con->is_web)
-	{
-		id -= ID_FONT_SMALLEST;
-		COleVariant v = long(id);
-		((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_ZOOM, 0, &v, NULL);
-	}
-}
 
 void ImportIEFav(CFile& file, IShellFolder* pParent, LPITEMIDLIST pidl)
 {
@@ -2329,6 +2072,12 @@ int CMainFrame::NewTab(CConn *pCon, BOOL bActive, int idx)
 #if defined	_COMBO_
 	}
 #endif
+	if(AppConfig.m_bNewTab_InNowTabNei)
+	{//把新的分頁加到現在分頁的旁邊
+		int iNowIdx = tab.GetCurSel();
+		iNowIdx < 0 ? iNowIdx = 0 : ++iNowIdx;
+		idx = iNowIdx;
+	}	
 	tab.InsertItem(TCIF_TEXT | TCIF_IMAGE | TCIF_PARAM, idx, pCon->name, img, LPARAM(pCon));
 	tab.Invalidate();
 	return idx;
@@ -2342,12 +2091,19 @@ void CMainFrame::OnConnectClose()
 
 void CMainFrame::OnConnectCloseAllOthers()
 {
+	int i;
+
+	if (AppConfig.closeother_query)
+	{
+		if (MessageBox(LoadString(IDS_CLOSE_CONFIRM) , LoadString(IDS_CONFIRM), MB_OKCANCEL | MB_ICONQUESTION) == IDCANCEL)
+			return;
+	}
 	int sel = tab.GetCurSel();
 	int all = tab.GetItemCount();
-	for(int i=0;i<sel;i++)
-		CloseConn(0, true);
-	for(int i=sel+1;i<all;i++)
-		CloseConn(1,true);
+	for(i=0;i<sel;i++)
+		CloseConn(0, false);
+	for(i=sel+1;i<all;i++)
+		CloseConn(1, false);
 }
 
 void CMainFrame::CloseConn(int i, bool confirm)
@@ -2362,6 +2118,11 @@ void CMainFrame::CloseConn(int i, bool confirm)
 			&& AppConfig.bbs_close_query)
 			if (MessageBox(LoadString(IDS_CLOSE_CONFIRM) , LoadString(IDS_CONFIRM), MB_OKCANCEL | MB_ICONQUESTION) == IDCANCEL)
 				return;
+#ifdef _COMBO_
+		if(pCon->is_web && AppConfig.web_close_query)//web page confirm before close
+			if (MessageBox(LoadString(IDS_CLOSE_CONFIRM) , LoadString(IDS_CONFIRM), MB_OKCANCEL | MB_ICONQUESTION) == IDCANCEL)
+				return;
+#endif
 	}
 
 #ifdef _COMBO_
@@ -2567,29 +2328,6 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	CFrameWnd::OnTimer(nIDEvent);
 }
 
-void CMainFrame::OnShowFrequentlyUsedStr()
-{
-	CStringDlg dlg(this);
-	if (dlg.DoModal() == IDOK)
-	{
-#ifdef _COMBO_
-		if (!view.con || dlg.str.IsEmpty())
-			return;
-
-		if (view.con->is_web)
-			((CWebConn*)view.con)->web_browser.SendString(dlg.str);
-		else
-#else
-		if (!view.telnet || dlg.str.IsEmpty())
-			return;
-#endif
-			SendFreqStr(dlg.str, HIBYTE(HIWORD(dlg.inf)));
-	}
-
-	if (dlg.data_changed)
-		LoadFrequentlyUsedStr();
-}
-
 void CMainFrame::LoadFrequentlyUsedStr()
 {
 	//讀取熱鍵字串
@@ -2644,48 +2382,6 @@ void CMainFrame::LoadFrequentlyUsedStr()
 		else
 			hhotstr_acc = NULL;
 	}
-}
-
-void CMainFrame::OnEditFind()
-{
-#ifdef	_COMBO_
-	if (!view.con)
-		return;
-	if (view.con->is_web)
-	{
-		static_cast<CWebConn*>(view.con)->web_browser.Find();
-		return;
-	}
-#else
-	if (!view.telnet)
-		return;
-#endif
-	view.telnet->sel_end.y = view.telnet->first_line;
-	view.FindStart();
-}
-
-void CMainFrame::OnFrequentlyUsedStr(UINT id)
-{
-	id -= ID_FIRST_HOTSTR;
-#if	defined	_COMBO_
-	if (!view.con)
-		return;
-#endif
-
-	if (!view.telnet)
-	{
-#if	defined	_COMBO_
-		if (id == 4)	//F5 key
-			((CWebConn*)view.con)->web_browser.wb_ctrl.Refresh();
-		else
-			((CWebConn*)view.con)->web_browser.SendString(hotstr.ElementAt(id));
-#endif
-		return;
-	}
-
-	CString str = hotstr.ElementAt(id);
-	BYTE inf = hotstr_inf.ElementAt(id);
-	SendFreqStr(str, inf);
 }
 
 void CMainFrame::AddToHistoryMenu(CString str)
@@ -2754,203 +2450,6 @@ void CMainFrame::LoadBBSFavorites()
 	AppConfig.favorites.LoadFavorites(bbs_fav_menu, 's');
 	ModifyMenu(main_menu, 3, MF_BYPOSITION | MF_STRING | MF_POPUP, (UINT)bbs_fav_menu, title);
 }
-
-#if defined(_COMBO_)
-void CMainFrame::LoadWebFavorites()
-{
-	char title[32];
-	GetMenuString(main_menu, 4, title, 32, MF_BYPOSITION);
-
-	if (AppConfig.use_ie_fav)
-		AppConfig.favorites.LoadIEFav(web_fav_menu);
-	else
-	{
-		if (!IsFileExist(ConfigPath + WWW_FAVORITE_FILENAME))
-			ImportIEFavorites();
-		AppConfig.favorites.LoadFavorites(web_fav_menu, 'w');
-	}
-
-	ModifyMenu(main_menu, 4, MF_BYPOSITION | MF_STRING | MF_POPUP, (UINT)web_fav_menu, title);
-}
-#endif
-
-void CMainFrame::OnFavorite(UINT id)
-{
-	CTelnetConn* telnet = view.telnet;
-
-	int idir = -1, _idir;	int level = 0;
-	CString dir;
-
-	const char sep_char = '\\' ;
-
-	CStringArray* fav;
-#ifdef _COMBO_
-	BOOL bWWW = id >= ID_FIRST_WEB_FAVORITE;
-	fav = bWWW ? &AppConfig.favorites.web_fav : &AppConfig.favorites.bbs_fav;
-	id -= bWWW ? ID_FIRST_WEB_FAVORITE : ID_FIRST_BBS_FAVORITE;
-#else
-	fav = &AppConfig.favorites.bbs_fav;
-	id -= ID_FIRST_BBS_FAVORITE;
-#endif
-
-	for (_idir = id; _idir >= 0; _idir--)
-	{
-		for (; _idir >= 0; _idir--)
-		{
-			if (fav->ElementAt(_idir).IsEmpty())
-				level--;
-			else if (fav->ElementAt(_idir)[0] == 'd')
-			{
-				if (level == 0)
-				{
-					if (idir == -1)
-						idir = _idir;
-					dir = (LPCTSTR(fav->ElementAt(_idir)) + 1) + (sep_char + dir);
-					break;
-				}
-				level++;
-			}
-		}
-	}
-#ifdef _COMBO_
-	if (bWWW)
-		dir = (AppConfig.use_ie_fav ? CFavMenu::GetIEFavDir() : LoadString(IDS_WWW_FAVORITE_NAME)) + (sep_char + dir);
-	else
-#endif
-		dir = (LoadString(IDS_BBS_FAVORITE_NAME) + (PATH_SEPARATOR + dir));
-
-	CString name = fav->ElementAt(id);
-#ifdef _COMBO_
-	if (name[0] != 's' && name[0] != 'w')
-#else
-	if (name[0] != 's')
-#endif
-	{
-		switch (name[0])
-		{
-		case 'a':
-			{
-#ifdef _COMBO_
-				if (!view.con)
-					return;
-				if (bWWW)
-				{
-					if (view.con->is_web)
-					{
-						CWebPageDlg dlg(this);
-						dlg.m_URL = ((CWebConn*)view.con)->web_browser.GetLocationURL();
-						dlg.m_Name = view.con->name;
-						if (dlg.DoModal() == IDOK)
-						{
-							if (AppConfig.use_ie_fav)
-							{
-								LPSTR pstr = (LPSTR)(LPCTSTR)dlg.m_Name;
-								while (*pstr)
-								{
-									//check illegal filename except DBCS
-									if (*pstr >= '\x81' && *pstr <= '\xfe') //0x81 to 0xfe (Big5)
-									{
-										pstr++;
-										if (! *pstr)
-											break;
-									}
-									else if (*pstr == '\\' || *pstr == '/' || *pstr == ':'
-											 || *pstr == '?' || *pstr == '<' || *pstr == '>'
-											 || *pstr == '|' || *pstr == '*' || *pstr == '\"')
-										*pstr = '-';
-									pstr++;
-								}
-								WritePrivateProfileString("InternetShortcut", "URL", dlg.m_URL, dir + dlg.m_Name + ".url");
-							}
-							else
-							{
-								name = 'w';
-								name += dlg.m_Name;
-								name += '\t';
-								name += dlg.m_URL;
-								fav->InsertAt(id - 1, name);
-								AppConfig.favorites.SaveFavorites(FALSE);
-							}
-							LoadWebFavorites();
-						}
-					}
-				}
-				else
-#endif
-					if (telnet && !telnet->is_web && !telnet->is_ansi_editor)
-					{
-						name = 's';	name += telnet->name;
-						name += '\t';
-#ifdef _COMBO_
-						name += telnet->address.Mid(9);
-#else
-						name += telnet->address;
-#endif
-						if (telnet->port != 23 && telnet->port > 0)
-						{
-							char port_str[16];
-							sprintf(port_str, ":%d", telnet->port);
-							name += port_str;
-						}
-						fav->InsertAt(id - 1, name);
-						AppConfig.favorites.SaveFavorites(TRUE);
-						LoadBBSFavorites();
-					}
-			}
-			break;
-		case 'e':
-			{
-				CString strPath = dir.Left(dir.GetLength() - 1);
-#ifdef	_COMBO_
-				if (bWWW && AppConfig.use_ie_fav)
-				{
-					typedef	DWORD (WINAPI DOFD)(HWND, LPCTSTR);
-					DOFD* pfunc = NULL;
-					HMODULE hmod = LoadLibrary("Shdocvw.dll");
-					pfunc = (DOFD*)GetProcAddress(hmod, "DoOrganizeFavDlg");
-					if (!hmod || !pfunc)
-						return;
-					pfunc(m_hWnd, LPCTSTR(strPath));
-					FreeLibrary(hmod);
-					LoadWebFavorites();
-				}
-				else
-#endif
-				{
-					CListDlg dlg(&view);
-					dlg.m_InitPath = strPath;
-					dlg.DoModal();
-				}
-				break;
-			}
-		case 'o':
-			{
-				id -= 2;
-				for (level = 0, idir++; idir < int(id) ; idir++)
-				{
-					if (*LPCTSTR(fav->ElementAt(idir)) == 'd')
-					{
-						level++;
-						continue;
-					}
-					else if (fav->ElementAt(idir) == "-")
-					{
-						level--;
-						idir += 4;
-						continue;
-					}
-					if (level == 0)
-						view.ConnectStr(fav->ElementAt(idir), dir);
-				}
-			}
-			break;
-		}
-		return;
-	}
-
-	view.ConnectStr(name, dir);
-}
-
 
 void CMainFrame::OnViewFullscr()
 {
@@ -3191,123 +2690,6 @@ int CMainFrame::ConnToIndex(CConn *conn)
 	return (idx >= tab.GetItemCount()) ? -1 : idx;
 }
 
-void CMainFrame::SwitchToConn(int index)
-{
-	CConn *newcon = tab.GetCon(index);
-
-	MouseCTL_Reset();
-
-#ifdef	_COMBO_
-	prev_conn = view.con;
-#else
-	prev_conn = view.telnet;
-	if (prev_conn)
-	{
-		if (prev_conn->is_telnet)
-			reinterpret_cast<CTelnetConn*>(prev_conn)->is_getting_article = false;
-		view.KillTimer(ID_MOVIETIMER);
-	}
-#endif
-
-	if (!newcon)
-	{
-#if defined _COMBO_ //////////////////////
-		view.con = NULL;
-#endif /////////////////////////////////
-		view.telnet = NULL;
-		view.SetFocus();
-		view.SetCaretPos(CPoint(view.left_margin, view.top_margin + view.lineh - 2));
-		CRect &view_rect = view.view_rect;
-		view.GetClientRect(view_rect);
-		view.AdjustFont(view_rect.right, view_rect.bottom);
-		UpdateUI();
-		SetWindowText(CMainFrame::window_title + 3);
-		UpdateAddressBar();
-		UpdateStatus();
-		view.Invalidate(FALSE);
-#if defined	_COMBO_ ///////////////////
-		view.ShowWindow(SW_SHOW);
-#endif //////////////////////////////////
-		return;
-	}
-
-#if defined _COMBO_ //////////////////////
-	if (newcon == view.con)
-		return;
-#else
-	if (newcon == view.telnet)
-		return;
-#endif /////////////////////////////////
-
-	int idx = ConnToIndex(newcon);
-
-	int cols_per_page = 0;
-	int lines_per_page = 0;
-
-#if defined _COMBO_/////////////////////////
-	if (view.telnet)	//如果原本是BBS，記錄原本的行列數
-	{
-		cols_per_page = view.telnet->site_settings.cols_per_page;
-		lines_per_page = view.telnet->site_settings.lines_per_page;
-	}
-	else	//如果原本是網頁，或是根本沒畫面
-	{
-		if (view.con)
-		{
-			((CWebConn*)view.con)->web_browser.ShowWindow(SW_HIDE);
-			((CWebConn*)view.con)->web_browser.EnableWindow(FALSE);
-		}
-	}
-	view.con = newcon;
-
-	if (newcon->is_web)	//如果新畫面是WWW
-	{
-		view.telnet = NULL;
-		view.GetWindowRect(view.view_rect);
-		::MapWindowPoints(NULL, m_hWnd, (LPPOINT)&view.view_rect, 2);
-		((CWebConn*)view.con)->web_browser.MoveWindow(view.view_rect);
-		((CWebConn*)view.con)->web_browser.ShowWindow(SW_SHOW);
-		view.ShowWindow(SW_HIDE);
-		((CWebConn*)view.con)->web_browser.EnableWindow(TRUE);
-		((CWebConn*)view.con)->web_browser.SetFocus();
-	}
-	else	//如果新畫面是BBS
-	{
-#endif///////////////////////////////////
-		view.telnet = (CTelnetConn*)newcon;
-		SetFocus();
-		if (view.telnet->site_settings.cols_per_page != cols_per_page || view.telnet->site_settings.lines_per_page != lines_per_page)
-		{
-			CRect& view_rect = view.view_rect;
-			view.GetClientRect(view_rect);
-			view.AdjustFont(view_rect.right, view_rect.bottom);
-		}
-#if defined _COMBO_/////////////////////////
-		view.ShowWindow(SW_SHOW);
-#endif////////////////////////////////////
-		view.Invalidate(FALSE);
-
-		TCITEM item;
-		item.mask = TCIF_IMAGE;
-		if (view.telnet->is_connected)
-		{
-			item.iImage = 0;
-			tab.SetItem(idx, &item);
-		}
-		view.telnet->UpdateCursorPos();
-#if defined _COMBO_////////////////////////
-	}
-#endif///////////////////////////////////
-
-	tab.SetCurSel(idx);
-	UpdateStatus();
-	UpdateAddressBar();
-	UpdateStatus();
-	UpdateUI();
-
-	SetWindowText(newcon->name + CMainFrame::window_title);
-}
-
 void CMainFrame::OnPrevConn()
 {
 	int sel = tab.GetCurSel() - 1;
@@ -3348,42 +2730,6 @@ void CMainFrame::OnHotkeySwitch(UINT id)
 void CMainFrame::OnLastCon()
 {
 	SwitchToConn(tab.GetItemCount() - 1);
-}
-
-void CMainFrame::UpdateUI()
-{
-	if (view.telnet)
-	{
-		CReBarCtrl& rbc = rebar.GetReBarCtrl();
-		if (AppConfig.use_ansi_bar || view.telnet->is_ansi_editor)
-			rbc.ShowBand(rbc.IDToIndex(2), TRUE);
-		else
-			rbc.ShowBand(rbc.IDToIndex(2), FALSE);
-#if defined	_COMBO_
-		progress_bar.ShowWindow(SW_HIDE);
-#endif
-	}
-	else
-	{
-		CReBarCtrl& rbc = rebar.GetReBarCtrl();
-		if (AppConfig.use_ansi_bar)
-			rbc.ShowBand(rbc.IDToIndex(2), TRUE);
-		else
-			rbc.ShowBand(rbc.IDToIndex(2), FALSE);
-
-		view.ShowScrollBar(SB_VERT, AppConfig.site_settings.showscroll);
-#if defined	_COMBO_
-		if (view.con)
-		{
-			progress_bar.SetRange32(0, ((CWebConn*)view.con)->web_browser.pgsmax);
-			progress_bar.SetPos(((CWebConn*)view.con)->web_browser.pgs);
-			progress_bar.ShowWindow(SW_SHOW);
-		}
-		else
-			progress_bar.ShowWindow(SW_HIDE);
-#endif
-	}
-	view.SetScrollBar();
 }
 
 void CMainFrame::OnAddToHome()
@@ -3463,70 +2809,6 @@ void CMainFrame::OnAddToHome()
 	}
 }
 
-void CMainFrame::OnNciku()
-{
-	CTelnetConn* telnet = view.telnet;
-	if (!telnet)
-	{
-#if defined	_COMBO_
-		CConn* con = view.con;
-		if (con)
-		{
-			((CWebConn*)view.con)->web_browser.SetFocus();
-			((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_COPY, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-		}
-#endif
-		return;
-	}
-	CString tmp = "http://www.nciku.com.tw/search/all/"+view.GetSelText();
-#if defined _COMBO_
-	((CMainFrame*)AfxGetApp()->m_pMainWnd)->view.ConnectWeb(tmp, TRUE);
-#else
-	ShellExecute(m_hWnd, "open", tmp, NULL, NULL, SW_SHOWMAXIMIZED);
-#endif
-}
-
-void CMainFrame::OnWikipedia()
-{
-	CTelnetConn* telnet = view.telnet;
-	if (!telnet)
-	{
-#if defined	_COMBO_
-		CConn* con = view.con;
-		if (con)
-		{
-			((CWebConn*)view.con)->web_browser.SetFocus();
-			((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_COPY, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-		}
-#endif
-		return;
-	}
-	CString tmp = "http://zh.wikipedia.org/wiki/"+view.GetSelText();
-#if defined _COMBO_
-	((CMainFrame*)AfxGetApp()->m_pMainWnd)->view.ConnectWeb(tmp, TRUE);
-#else
-	ShellExecute(m_hWnd, "open", tmp, NULL, NULL, SW_SHOWMAXIMIZED);
-#endif
-}
-
-void CMainFrame::OnCopy()
-{
-	CTelnetConn* telnet = view.telnet;
-	if (!telnet)
-	{
-#if defined	_COMBO_
-		CConn* con = view.con;
-		if (con)
-		{
-			((CWebConn*)view.con)->web_browser.SetFocus();
-			((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_COPY, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-		}
-#endif
-		return;
-	}
-	view.CopySelText();
-}
-
 void CMainFrame::OnFont()
 {
 #if defined(_COMBO_)
@@ -3591,87 +2873,6 @@ void CMainFrame::OnCopyPaste()
 {
 	OnCopy();
 	OnPaste();
-}
-
-void CMainFrame::OnPaste()
-{
-	if (!view.telnet)
-	{
-#if defined	_COMBO_
-		if (view.con)
-		{
-			((CWebConn*)view.con)->web_browser.wb_ctrl.SetFocus();
-			((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_PASTE, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-		}
-#endif
-
-		return;
-	}
-
-	CString text;
-	if (!CClipboard::GetText(text))
-		return;
-
-	//偵測是否包含色彩碼
-	//如果有色彩碼，改成彩色貼上
-	if (IsContainAnsiCode(text))
-		view.SendAnsiString(text);
-	else	//否則正常貼上純文字
-	{
-		//並且如果不包含色彩碼，再重新從剪貼簿取一次字串 (改取Unicode字串)
-
-		wchar_t* pwstr = NULL;
-		if (CClipboard::GetTextW(&pwstr))
-		{
-			UINT cp_id = view.GetCodePage();
-			int len = wcslen(pwstr) * sizeof(wchar_t) + 1;
-			char* pstr = new char[ len ];
-			memset(pstr, 0, len);
-
-			if (cp_id == 950)
-			{
-				g_ucs2conv.Ucs22Big5(pwstr, pstr);
-			}
-			else
-			{
-				::WideCharToMultiByte(cp_id, 0, pwstr, -1, pstr, len, NULL, NULL);
-			}
-
-			text.Empty();
-			text = pstr;
-			if (pstr)
-				delete [] pstr;
-			if (pwstr)
-				delete [] pwstr;
-			//考慮到 server 端實際接收資料的速度不快，
-			//所以這邊試圖忽略掉從剪貼簿取兩次資料的開銷損失
-		}
-		view.telnet->SendString(text);
-	}
-}
-
-void CMainFrame::OnSelAll()
-{
-	if (!view.telnet)
-	{
-#if defined	_COMBO_
-		if (view.con)
-		{
-			((CWebConn*)view.con)->web_browser.SetFocus();
-			((CWebConn*)view.con)->web_browser.wb_ctrl.ExecWB(OLECMDID_SELECTALL, OLECMDEXECOPT_DODEFAULT, NULL, NULL);
-		}
-#endif
-		return;
-	}
-	SCROLLINFO info;
-	view.GetScrollInfo(SB_VERT, &info);
-
-	CTelnetConn *telnet = view.telnet;
-	telnet->sel_start.x = 0;
-	telnet->sel_start.y = info.nPos;
-	telnet->sel_end.x = telnet->site_settings.cols_per_page;
-	telnet->sel_end.y = info.nPos + telnet->site_settings.lines_per_page - 1;
-	view.Invalidate(FALSE);
 }
 
 void CMainFrame::OnPlayMovie()
@@ -3990,7 +3191,7 @@ void CMainFrame::OnBBSFont()
 	}
 }
 
-LRESULT CMainFrame::OnDownloadPage(WPARAM, LPARAM)
+LRESULT CMainFrame::OnDownloadPage(WPARAM w, LPARAM l)
 {
 	const char url[] = "http://of.openfoundry.org/projects/744/download";
 #ifdef	_COMBO_
@@ -3998,6 +3199,7 @@ LRESULT CMainFrame::OnDownloadPage(WPARAM, LPARAM)
 #else
 	ShellExecute(m_hWnd, "open", url , NULL, NULL, SW_SHOW);
 #endif
+
 	return 0;
 }
 

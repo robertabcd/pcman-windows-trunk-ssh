@@ -27,6 +27,8 @@ void CBBSHyperLink::Load(char* section)
 	if (*section)
 	{
 		links.RemoveAll();
+		// Reset email index. Otherwise, it may be out of bounds.
+		email = -1;
 		char* line = strtok(section, "\r\n");
 		for (; line; line = strtok(NULL, "\r\n"))
 		{
@@ -87,6 +89,10 @@ inline bool IsURLSchemeChar(int ch)
 const char* CBBSHyperLink::FindEMailLink(const char *src, int &len) const
 {
 	const char* plink = NULL;
+
+	if (email == -1)
+		return NULL;
+
 	while (*src)
 	{
 		while (*src && (*src == '@' || !IsURLChar(*src)))
@@ -95,15 +101,24 @@ const char* CBBSHyperLink::FindEMailLink(const char *src, int &len) const
 
 		while (IsURLChar(*src) && *src != '@')
 			src++;
+
 		if (*src == '@' && plink != src)
 		{
 			const char* pend = src;	bool has_dot = false;
-			while (IsURLChar(*pend))
+			int pnested = 0;	/* 記錄 () 的結構, 避免將不必要的 ) 算入網址 */
+
+			while (IsURLChar(*pend) && (*pend != ')' || pnested > 0))
 			{
 				if (*pend == '.')
 					has_dot = true;
+				if (*pend == '(')
+					pnested++;
+				else if(*pend == ')')
+					pnested--;
 				pend++;
+
 			}
+
 			if (pend > src && has_dot && *(pend - 1) != '.')
 			{
 				len = int(pend) - int(plink);
@@ -129,8 +144,17 @@ const char* CBBSHyperLink::FindHyperLink(const char *src, int &len) const
 		if (strncmp(src, "://", 3) == 0)
 		{
 			const char* pend = src;
-			while (IsURLChar(*pend))
+
+			int pnested = 0;	/* 記錄 () 的結構, 避免將不必要的 ) 算入網址 */
+			while (IsURLChar(*pend) && (*pend != ')' || pnested > 0))
+			{
+				if (*pend == '(')
+					pnested++;
+				else if(*pend == ')')
+					pnested--;
 				pend++;
+			}
+
 			if (pend > src)
 			{
 				if (pemail && pemail < plink)
@@ -223,22 +247,33 @@ void CBBSHyperLink::Default()
 }
 
 
+/* Get index of URL type. Return -1 if not found.  */
 int CBBSHyperLink::GetURLType(const char *url)
 {
-	CBBSHyperLinkData* plinks = links.GetData();
-	//檢查是不是e-mail
-	const char* psymbol = strstr(url, "://");
-	if (!psymbol && strchr(url, '@'))	//如果是E-mail
+	CBBSHyperLinkData* plinks;
+	const char* psymbol;
+	int len;
+
+	plinks = links.GetData();;
+	psymbol = strstr(url, "://");
+	/* Check whether it is an e-Mail address.  */
+	if (!psymbol && strchr(url, '@'))
 		return email;
 
-	int len = int(psymbol) - int(url);
-	int i;
-	for (i = 0;i < links.GetSize(); ++i)
+	if (psymbol == NULL)
+		/* Abort if scheme part, e.g., http, is missing.  */
+		goto not_found;
+
+	len = psymbol - url;
+	for (int i = 0;i < links.GetSize(); ++i)
 	{
-		if (strnicmp(plinks[i].scheme, url, len) == 0)	//如果有偵測到
-			break;
+		if (strnicmp(plinks[i].scheme, url, len) == 0)
+			/* Found and return type index.  */
+			return i;
 	}
 
-	return i < links.GetSize() ? i : -1;
+	/* Not found.  */
+not_found:
+	return -1;
 }
 

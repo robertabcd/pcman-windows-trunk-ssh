@@ -29,7 +29,7 @@ class CMainFrame;
 
 
 #ifdef	_COMBO_
-class CWebConn;
+class WebConn;
 struct MENUMAPITEM;
 #else	//在不支援 Web 的版本中直接把TCon定義成MySocket省去麻煩
 //	typedef		CTelnetConn	CConn;
@@ -153,7 +153,7 @@ public:
 	void FindStart();
 
 #ifdef	_COMBO_
-	CWebConn* ConnectWeb(CString address, BOOL act);
+	WebConn* ConnectWeb(CString address, BOOL act);
 	void MoveWindow(int x, int y, int nWidth, int nHeight, BOOL bRepaint = TRUE);
 	BOOL SetWindowPos(const CWnd* pWndInsertAfter, int x, int y, int cx, int cy, UINT nFlags);
 

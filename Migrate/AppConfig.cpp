@@ -126,6 +126,8 @@ void CAppConfig::Save(LPCTSTR config_path)
 	fprintf(file, "fullscr_showads=%d\r\n", fullscr_showads);
 	fprintf(file, "fullscr_showclose=%d\r\n", fullscr_showclose);
 	fprintf(file, "full_use_ansi_bar=%d\r\n", full_use_ansi_bar);
+	fprintf(file, "m_bNewTab_InNowTabNei=%d\r\n", m_bNewTab_InNowTabNei);
+	
 
 	fprintf(file, "minimize_to_tray=%d\r\n", minimize_to_tray);
 	fprintf(file, "pcman_hotkey=%d\r\n", pcman_hotkey);

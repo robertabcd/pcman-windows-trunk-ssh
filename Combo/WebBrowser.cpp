@@ -18,7 +18,8 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 #include "../Lite/mainfrm.h"
-#include "WebConn.h"
+#include "WebConnIE.h"
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CWebBrowser
@@ -83,6 +84,8 @@ END_EVENTSINK_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CWebBrowser message handlers
 
+#if !defined(SET_FEATURE_ON_THREAD)
+// These may be defined in UrlMon.h in Windows SDK 6
 const DWORD SET_FEATURE_ON_THREAD = 0x00000001;
 const DWORD SET_FEATURE_ON_PROCESS = 0x00000002;
 const DWORD SET_FEATURE_IN_REGISTRY = 0x00000004;
@@ -115,6 +118,7 @@ enum INTERNETFEATURELIST
 	FEATURE_GET_URL_DOM_FILEPATH_UNENCODED = 18,
 	FEATURE_ENTRY_COUNT = 19,
 };
+#endif
 
 typedef HRESULT(WINAPI *PCoInternetSetFeatureEnabled)(INTERNETFEATURELIST, DWORD, BOOL);
 
@@ -358,7 +362,7 @@ void CWebBrowser::OnNewWindow2(LPDISPATCH FAR* ppDisp, BOOL FAR* Cancel)
 	}
 
 	IDispatch* p = *ppDisp;
-	CWebConn* nweb_conn = (CWebConn*)view->ConnectWeb("", FALSE);
+	WebConnIE* nweb_conn = (WebConnIE*)view->ConnectWeb("", FALSE);
 	*ppDisp = nweb_conn->web_browser.wb_ctrl.get_Application();
 }
 

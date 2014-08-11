@@ -25,6 +25,7 @@ public:
 	//}}AFX_DATA
 	enum { IDD = IDD_GENERAL };
 	CHotKeyCtrl	m_wndHotkey;
+	CComboBox m_minidump;
 	COLORREF active_tab_textcolor;
 
 // Overrides
