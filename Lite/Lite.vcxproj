@@ -507,6 +507,7 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     <ClInclude Include="FavMenu.h" />
     <ClInclude Include="FileUtil.h" />
     <ClInclude Include="GeneralPage.h" />
+    <ClInclude Include="Lock.h" />
     <ClInclude Include="Hotkey.h" />
     <ClInclude Include="HotkeyEdit.h" />
     <ClInclude Include="HyperLinkPage.h" />
@@ -555,6 +556,8 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Resource\res\copy_cur.cur" />
+    <None Include="..\Resource\res\page_cur.cur" />
+    <None Include="..\Resource\res\topic_cur.cur" />
     <None Include="res\copy_cur.cur" />
     <None Include="res\drag_cur.cur" />
     <None Include="..\Resource\res\drag_cur.cur" />

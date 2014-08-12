@@ -25,7 +25,9 @@ class CDownloadArticleDlg;
 
 int find_sub_str(char* str, char* sub);
 
-class CTelnetConn : public CConn
+class CTelnetConn
+	: public CConn
+	, public CSshConnDelegate
 {
 	friend class CDownloadArticleDlg;
 // Attributes
@@ -48,6 +50,8 @@ public:
 //	Socket handle
 	SOCKET socket;
 	INetConn *netconn;
+	bool is_conn_error; // protocol/security error, should show message to user.
+	CString conn_error_message;
 
 //	Screen Data
 	LPSTR *screen;	//screen buffer
@@ -187,6 +191,9 @@ public:
 		scr_top = 0;
 		scr_bottom = site_settings.lines_per_page - 1;
 	}
+
+	bool AskAcceptHostKey(const std::string &hostport, const std::string &keysha1);
+	void SetSshErrorState(CSshConnDelegate::Err err);
 
 	static CTelnetConn *CreateAnsiEditor();
 

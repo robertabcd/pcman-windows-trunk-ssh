@@ -81,12 +81,16 @@
 #define IDR_TELNETTYPE                  129
 #define IDR_TABPOPUP                    129
 #define IDR_POPUP                       129
+#define IDS_ASK_ACCEPT_HOSTKEY          129
 #define IDD_HOST                        130
 #define IDD_CONNECT                     130
+#define IDS_SSHERR_KNOWNHOSTSFILE       130
 #define IDD_STATUS                      131
 #define IDR_TOOLBAR                     131
 #define IDD_LIST                        131
+#define IDS_SSHERR_HOSTKEY_MISMATCH     131
 #define IDD_EDITDIR                     132
+#define IDS_SSHERR_HOSTKEY_USERREJECT   132
 #define IDD_ADLIST                      133
 #define IDD_ADITEM                      134
 #define IDD_WEBPAGE                     135

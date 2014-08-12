@@ -1,9 +1,14 @@
+#include "StdAfx.h"
 #include <cassert>
 #include <winsock2.h>
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
 #include "../ThirdParty/libssh2/include/libssh2.h"
 #include "NetConn.h"
+#include "PCMan.h"
+
+Mutex g_knownhosts_mutex;
 
 INetConn::INetConn()
 {
@@ -76,11 +81,14 @@ void CTcpConn::Close()
 // CSshConn
 /////////////////////////////////////////////////////////////////////////////
 
-CSshConn::CSshConn(SOCKET socket)
+CSshConn::CSshConn(SOCKET socket, const std::string &hostname, unsigned short port)
 	: m_socket(socket)
 	, m_session(NULL)
 	, m_channel(NULL)
 	, m_state(StateConnecting)
+	, m_host(hostname)
+	, m_port(port)
+	, m_delegate(NULL)
 {
 	static bool init = 0;
 	if (!init) {
@@ -141,6 +149,11 @@ int CSshConn::Receive(void *buf, int len)
 	}
 
 	if (m_state == StateAuthenticating) {
+		if (!CheckHostkey()) {
+			Shutdown();
+			return -1;
+		}
+
 		char *methods = libssh2_userauth_list(m_session, m_ssh_username.c_str(), m_ssh_username.size());
 		if (methods) {
 			fprintf(stderr, "AuthMethods: %s\n", methods);
@@ -233,6 +246,11 @@ void CSshConn::SetSshUsername(const char *username)
 	m_ssh_username = username;
 }
 
+void CSshConn::SetDelegate(CSshConnDelegate *delegate)
+{
+	m_delegate = delegate;
+}
+
 void CSshConn::GenMethods()
 {
 	m_methods =
@@ -252,4 +270,98 @@ void CSshConn::GenMethods()
 std::string CSshConn::GetMethods() const
 {
 	return m_methods;
+}
+
+std::string Hexify(const char *bin, size_t len)
+{
+	std::string h;
+	char buf[4];
+	for (int i = 0; i < len; i++) {
+		if (i > 0)
+			h.push_back(':');
+		_snprintf(buf, sizeof(buf), "%02x", (unsigned char)bin[i]);
+		h += buf;
+	}
+	return h;
+}
+
+std::string Hexify(const char *cstr)
+{
+	return Hexify(cstr, strlen(cstr));
+}
+
+bool CSshConn::CheckHostkey()
+{
+	CSshConnDelegate::Err err = CSshConnDelegate::ErrKnownHostsFile;
+	std::string hostport = std::string("[") + m_host + "]:" + std::to_string(m_port);
+	std::string hosts_file = CApp::GetInstance()->GetConfigPath("known_hosts");
+	LIBSSH2_KNOWNHOSTS *hosts = libssh2_knownhost_init(m_session);
+	
+	{
+		ScopedLock _(g_knownhosts_mutex);
+		libssh2_knownhost_readfile(
+			hosts,
+			hosts_file.c_str(),
+			LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+	}
+
+	size_t keylen;
+	int keytype;
+	const char *key = libssh2_session_hostkey(m_session, &keylen, &keytype);
+	if (key == NULL)
+		goto out;
+
+	switch (libssh2_knownhost_check(
+		hosts, hostport.c_str(), key, keylen,
+		LIBSSH2_KNOWNHOST_TYPE_PLAIN | LIBSSH2_KNOWNHOST_KEYENC_RAW, NULL))
+	{
+	case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
+		break;
+
+	case LIBSSH2_KNOWNHOST_CHECK_MATCH:
+		err = CSshConnDelegate::ErrOK;
+		goto out;
+
+	case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
+		err = CSshConnDelegate::ErrHostKeyMismatch;
+		goto out;
+
+	case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
+	default:
+		goto out;
+	}
+
+	if (!m_delegate || !m_delegate->AskAcceptHostKey(
+		hostport, Hexify(libssh2_hostkey_hash(m_session, LIBSSH2_HOSTKEY_HASH_SHA1))))
+	{
+		err = CSshConnDelegate::ErrHostKeyRejected;
+		goto out;
+	}
+	err = CSshConnDelegate::ErrOK;
+
+	{
+		ScopedLock _(g_knownhosts_mutex);
+
+		libssh2_knownhost_readfile(
+			hosts,
+			hosts_file.c_str(),
+			LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+
+		int typemask = LIBSSH2_KNOWNHOST_TYPE_PLAIN | LIBSSH2_KNOWNHOST_KEYENC_RAW;
+		if (keytype == LIBSSH2_HOSTKEY_TYPE_RSA)
+			typemask |= LIBSSH2_KNOWNHOST_KEY_SSHRSA;
+		else if (keytype == LIBSSH2_HOSTKEY_TYPE_DSS)
+			typemask |= LIBSSH2_KNOWNHOST_KEY_SSHDSS;
+		libssh2_knownhost_addc(hosts, hostport.c_str(), "", key, keylen, "", 0, typemask, NULL);
+		libssh2_knownhost_writefile(hosts, hosts_file.c_str(), LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+	}
+
+out:
+	libssh2_knownhost_free(hosts);
+
+	if (err == CSshConnDelegate::ErrOK)
+		return true;
+	if (m_delegate)
+		m_delegate->SetSshErrorState(err);
+	return false;
 }

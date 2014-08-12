@@ -736,8 +736,8 @@ void CTermView::OnTimer(UINT nIDEvent)
 			}
 			else if (item->is_disconnected)
 			{
-				//如果設定自動重連，而且在時間內被斷線，且間隔時間已到
-				if (item->site_settings.auto_reconnect)
+				//如果不是在錯誤狀態且設定自動重連，而且在時間內被斷線，且間隔時間已到
+				if (!item->is_conn_error && item->site_settings.auto_reconnect)
 				{
 					if (item->time <= item->site_settings.connect_interval)
 					{

@@ -403,6 +403,9 @@
     <ClInclude Include="Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\Resource\res\ansfile.ico">
@@ -438,6 +441,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="res\hand.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\Resource\res\topic_cur.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\Resource\res\page_cur.cur">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

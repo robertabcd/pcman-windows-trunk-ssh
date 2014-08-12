@@ -213,8 +213,9 @@ void CTelnetConn::Connect(sockaddr *addr, int len)
 
 	case TypeSsh:
 	{
-		CSshConn *c = new CSshConn(socket);
+		CSshConn *c = new CSshConn(socket, (LPCTSTR)host, port);
 		c->SetSshUsername(LPCTSTR(ssh_username));
+		c->SetDelegate(this);
 		netconn = c;
 		break;
 	}
@@ -651,8 +652,16 @@ void CTelnetConn::OnClose(int nErrorCode)
 	if (idx < view->parent->tab.GetItemCount())	//如果已經斷線卻未關閉畫面
 	{
 		view->parent->tab.SetItem(idx, &tcitem);	//改為紅色圖示
+		if (is_conn_error)
+		{
+			if (conn_error_message.GetLength() > 0)
+				strncpy(screen[first_line], conn_error_message, conn_error_message.GetLength());
+
+			if (view->telnet == this)
+				view->InvalidateRect(FALSE);
+		}
 		//如果設定自訂重連，而且在時間內被斷線，且間隔時間已到
-		if (site_settings.auto_reconnect &&
+		else if (site_settings.auto_reconnect &&
 			time <= site_settings.connect_interval
 			&& site_settings.reconnect_interval == 0)
 		{
@@ -922,6 +931,7 @@ int find_sub_str(char* str, char* sub)
 
 void CTelnetConn::OnConnect(int nErrorCode)
 {
+	is_conn_error = false; // reset error state
 	if (netconn)
 		netconn->OnConnect(nErrorCode);
 	TCITEM item;
@@ -2256,4 +2266,31 @@ CString CTelnetConn::GetStatus() const
 	if (netconn && type == TypeSsh)
 		return static_cast<CSshConn *>(netconn)->GetMethods().c_str();
 	return CString();
+}
+
+bool CTelnetConn::AskAcceptHostKey(const std::string &hostport, const std::string &keysha1)
+{
+	CString message;
+	message.Format(LoadString(IDS_ASK_ACCEPT_HOSTKEY), _T(hostport.c_str()), _T(keysha1.c_str()));
+	view->parent->SwitchToConn(this);
+	return MessageBox(view->parent->m_hWnd, message, LoadString(IDS_CONFIRM), MB_YESNO) == IDYES;
+}
+
+void CTelnetConn::SetSshErrorState(CSshConnDelegate::Err err)
+{
+	is_conn_error = true;
+
+	switch (err) {
+	case ErrKnownHostsFile:
+		conn_error_message = LoadString(IDS_SSHERR_KNOWNHOSTSFILE);
+		break;
+
+	case ErrHostKeyMismatch:
+		conn_error_message = LoadString(IDS_SSHERR_HOSTKEY_MISMATCH);
+		break;
+
+	case ErrHostKeyRejected:
+		conn_error_message = LoadString(IDS_SSHERR_HOSTKEY_USERREJECT);
+		break;
+	}
 }

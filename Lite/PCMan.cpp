@@ -254,6 +254,16 @@ BOOL CApp::OnIdle( LONG lCount )
 #endif
 }
 
+std::string CApp::GetConfigPath(const std::string &name) const
+{
+	return std::string((LPCTSTR)ConfigPath) + name;
+}
+
+CApp *CApp::GetInstance()
+{
+	return reinterpret_cast<CApp *>(AfxGetApp());
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CApp message handlers
 

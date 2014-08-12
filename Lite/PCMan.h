@@ -37,6 +37,9 @@ public:
 // Implementation
 
 public:
+	std::string GetConfigPath(const std::string &name) const;
+	static CApp *GetInstance();
+
 	//{{AFX_MSG(CApp)
 	afx_msg void OnAppAbout();
 	//}}AFX_MSG
