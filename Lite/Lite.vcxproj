@@ -51,9 +51,10 @@
     <TargetName>PCMan</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)$(ProjectName)\$(Configuration)\PCMan\</OutDir>
     <IntDir>$(SolutionDir)$(ProjectName)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>PCMan</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -102,6 +103,9 @@
       <Command>md $(OutDir)Config
 $(OutDir)..\BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     </PreLinkEvent>
+    <PostBuildEvent>
+      <Command>copy /Y $(SolutionDir)ThirdParty\openssl\bin\libeay32.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -134,8 +138,8 @@ $(OutDir)..\BuildMenu.exe $(Configuration)\PCMan\Config</Command>
       <Culture>0x0404</Culture>
     </ResourceCompile>
     <PreLinkEvent>
-      <Command>md $(OutDir)PCMan\Config
-$(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
+      <Command>md $(OutDir)Config
+$(OutDir)..\BuildMenu.exe $(Configuration)\PCMan\Config</Command>
     </PreLinkEvent>
     <Link>
       <AdditionalDependencies>wsock32.lib;winmm.lib;Version.lib;libeay32.lib;zlib.lib</AdditionalDependencies>
@@ -148,6 +152,9 @@ $(OutDir)BuildMenu.exe $(Configuration)\PCMan\Config</Command>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>..\ThirdParty\openssl\lib;..\ThirdParty\zlib\static32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y $(SolutionDir)ThirdParty\openssl\bin\libeay32.dll $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Combo\MainFrmWebPart.cpp" />
